@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Lato:wght@300;400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Background — warm cream */
+    --background: 0.975 0.012 80;
+    --foreground: 0.22 0.025 60;
+
+    /* Card — soft white */
+    --card: 0.995 0.005 80;
+    --card-foreground: 0.22 0.025 60;
+
+    /* Popover */
+    --popover: 0.995 0.005 80;
+    --popover-foreground: 0.22 0.025 60;
+
+    /* Primary — sage green */
+    --primary: 0.52 0.1 155;
+    --primary-foreground: 0.98 0.005 100;
+
+    /* Secondary — warm sand */
+    --secondary: 0.94 0.025 80;
+    --secondary-foreground: 0.32 0.03 60;
+
+    /* Muted */
+    --muted: 0.93 0.018 80;
+    --muted-foreground: 0.52 0.02 70;
+
+    /* Accent — warm amber */
+    --accent: 0.92 0.06 75;
+    --accent-foreground: 0.28 0.04 60;
+
+    /* Destructive — coral */
+    --destructive: 0.6 0.2 25;
+    --destructive-foreground: 0.98 0 0;
+
+    /* Borders */
+    --border: 0.87 0.02 80;
+    --input: 0.87 0.02 80;
+    --ring: 0.52 0.1 155;
+
+    /* Status colors */
+    --success: 0.56 0.13 155;
+    --success-bg: 0.93 0.04 155;
+    --warning: 0.7 0.14 60;
+    --warning-bg: 0.96 0.05 75;
+    --danger: 0.6 0.2 25;
+    --danger-bg: 0.96 0.05 25;
+
+    /* Charts */
+    --chart-1: 0.56 0.13 155;
+    --chart-2: 0.7 0.14 60;
+    --chart-3: 0.6 0.2 25;
+    --chart-4: 0.55 0.11 200;
+    --chart-5: 0.75 0.1 100;
+
+    /* Sidebar */
+    --sidebar: 0.975 0.012 80;
+    --sidebar-foreground: 0.22 0.025 60;
+    --sidebar-primary: 0.52 0.1 155;
+    --sidebar-primary-foreground: 0.98 0.005 100;
+    --sidebar-accent: 0.94 0.025 80;
+    --sidebar-accent-foreground: 0.32 0.03 60;
+    --sidebar-border: 0.87 0.02 80;
+    --sidebar-ring: 0.52 0.1 155;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-size: 15px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  .status-green {
+    background-color: oklch(var(--success-bg));
+    color: oklch(var(--success));
+  }
+  .status-yellow {
+    background-color: oklch(var(--warning-bg));
+    color: oklch(var(--warning));
+  }
+  .status-red {
+    background-color: oklch(var(--danger-bg));
+    color: oklch(var(--danger));
+  }
+  .text-success {
+    color: oklch(var(--success));
+  }
+  .text-warning {
+    color: oklch(var(--warning));
+  }
+  .text-danger {
+    color: oklch(var(--danger));
+  }
+  .bg-success-subtle {
+    background-color: oklch(var(--success-bg));
+  }
+  .bg-warning-subtle {
+    background-color: oklch(var(--warning-bg));
+  }
+  .bg-danger-subtle {
+    background-color: oklch(var(--danger-bg));
+  }
+  .border-success {
+    border-color: oklch(var(--success));
+  }
+  .border-warning {
+    border-color: oklch(var(--warning));
+  }
+  .border-danger {
+    border-color: oklch(var(--danger));
+  }
+  .app-bg {
+    background: linear-gradient(
+      135deg,
+      oklch(0.96 0.018 155 / 0.4) 0%,
+      oklch(0.975 0.012 80) 40%,
+      oklch(0.97 0.02 75 / 0.3) 100%
+    );
+    min-height: 100vh;
+  }
+  .card-shadow {
+    box-shadow: 0 1px 3px oklch(0.22 0.025 60 / 0.08),
+                0 4px 12px oklch(0.22 0.025 60 / 0.05);
+  }
+}
