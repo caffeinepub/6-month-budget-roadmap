@@ -8,36 +8,58 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const Account = IDL.Record({
+  'id' : IDL.Text,
+  'balance' : IDL.Float64,
+  'name' : IDL.Text,
+  'accountType' : IDL.Text,
+});
 export const Income = IDL.Record({
   'id' : IDL.Text,
+  'accountId' : IDL.Text,
   'date' : IDL.Text,
   'note' : IDL.Opt(IDL.Text),
+  'user' : IDL.Text,
   'category' : IDL.Text,
   'amount' : IDL.Float64,
 });
 export const Receipt = IDL.Record({
   'id' : IDL.Text,
   'subCategory' : IDL.Text,
+  'accountId' : IDL.Text,
   'date' : IDL.Text,
   'note' : IDL.Opt(IDL.Text),
+  'user' : IDL.Text,
   'amount' : IDL.Float64,
   'mainCategory' : IDL.Text,
 });
 
 export const idlService = IDL.Service({
+  'addAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Float64], [IDL.Text], []),
   'addIncomeEntry' : IDL.Func(
-      [IDL.Float64, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+      [IDL.Float64, IDL.Text, IDL.Text, IDL.Opt(IDL.Text), IDL.Text, IDL.Text],
       [IDL.Text],
       [],
     ),
   'addNote' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'addReceiptEntry' : IDL.Func(
-      [IDL.Float64, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+      [
+        IDL.Float64,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(IDL.Text),
+        IDL.Text,
+        IDL.Text,
+      ],
       [IDL.Text],
       [],
     ),
+  'deleteAccount' : IDL.Func([IDL.Text], [], []),
   'deleteIncomeEntry' : IDL.Func([IDL.Text], [], []),
   'deleteReceiptEntry' : IDL.Func([IDL.Text], [], []),
+  'getAccount' : IDL.Func([IDL.Text], [IDL.Opt(Account)], ['query']),
+  'getAllAccounts' : IDL.Func([], [IDL.Vec(Account)], ['query']),
   'getAllChecklistStates' : IDL.Func(
       [],
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))))],
@@ -50,14 +72,12 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAllReceiptEntries' : IDL.Func([], [IDL.Vec(Receipt)], ['query']),
-  'getCheckingBalance' : IDL.Func([], [IDL.Float64], ['query']),
   'getFinancialOverview' : IDL.Func(
       [],
       [
         IDL.Record({
           'housingFund' : IDL.Float64,
           'savingsAmount' : IDL.Float64,
-          'checkingBalance' : IDL.Float64,
         }),
       ],
       ['query'],
@@ -71,24 +91,44 @@ export const idlService = IDL.Service({
           'totalBills' : IDL.Float64,
           'savingsAmount' : IDL.Float64,
           'totalHouseholdGoods' : IDL.Float64,
-          'checkingBalance' : IDL.Float64,
+        }),
+      ],
+      ['query'],
+    ),
+  'getFinancialSummaryByUser' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Record({
+          'totalIncome' : IDL.Float64,
+          'totalBills' : IDL.Float64,
+          'totalHouseholdGoods' : IDL.Float64,
         }),
       ],
       ['query'],
     ),
   'getGrocerySpending' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
   'getHousingFund' : IDL.Func([], [IDL.Float64], ['query']),
+  'getIncomeEntriesByUser' : IDL.Func([IDL.Text], [IDL.Vec(Income)], ['query']),
   'getMonthlyIncomeTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
   'getMonthlyReceiptTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
   'getNonEssentialSpending' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
   'getNote' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+  'getReceiptEntriesByUser' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(Receipt)],
+      ['query'],
+    ),
   'getSavingsAmount' : IDL.Func([], [IDL.Float64], ['query']),
   'getTotalBills' : IDL.Func([], [IDL.Float64], ['query']),
   'getTotalHouseholdGoods' : IDL.Func([], [IDL.Float64], ['query']),
   'getTotalIncome' : IDL.Func([], [IDL.Float64], ['query']),
   'getWeeklyReceiptTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
   'toggleChecklistItem' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-  'updateCheckingBalance' : IDL.Func([IDL.Float64], [], []),
+  'updateAccount' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Float64],
+      [],
+      [],
+    ),
   'updateGrocerySpending' : IDL.Func([IDL.Text, IDL.Float64], [], []),
   'updateHousingFund' : IDL.Func([IDL.Float64], [], []),
   'updateNonEssentialSpending' : IDL.Func([IDL.Text, IDL.Float64], [], []),
@@ -99,36 +139,65 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const Account = IDL.Record({
+    'id' : IDL.Text,
+    'balance' : IDL.Float64,
+    'name' : IDL.Text,
+    'accountType' : IDL.Text,
+  });
   const Income = IDL.Record({
     'id' : IDL.Text,
+    'accountId' : IDL.Text,
     'date' : IDL.Text,
     'note' : IDL.Opt(IDL.Text),
+    'user' : IDL.Text,
     'category' : IDL.Text,
     'amount' : IDL.Float64,
   });
   const Receipt = IDL.Record({
     'id' : IDL.Text,
     'subCategory' : IDL.Text,
+    'accountId' : IDL.Text,
     'date' : IDL.Text,
     'note' : IDL.Opt(IDL.Text),
+    'user' : IDL.Text,
     'amount' : IDL.Float64,
     'mainCategory' : IDL.Text,
   });
   
   return IDL.Service({
+    'addAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Float64], [IDL.Text], []),
     'addIncomeEntry' : IDL.Func(
-        [IDL.Float64, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+        [
+          IDL.Float64,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Text,
+          IDL.Text,
+        ],
         [IDL.Text],
         [],
       ),
     'addNote' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'addReceiptEntry' : IDL.Func(
-        [IDL.Float64, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
+        [
+          IDL.Float64,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Text,
+          IDL.Text,
+        ],
         [IDL.Text],
         [],
       ),
+    'deleteAccount' : IDL.Func([IDL.Text], [], []),
     'deleteIncomeEntry' : IDL.Func([IDL.Text], [], []),
     'deleteReceiptEntry' : IDL.Func([IDL.Text], [], []),
+    'getAccount' : IDL.Func([IDL.Text], [IDL.Opt(Account)], ['query']),
+    'getAllAccounts' : IDL.Func([], [IDL.Vec(Account)], ['query']),
     'getAllChecklistStates' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))))],
@@ -141,14 +210,12 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getAllReceiptEntries' : IDL.Func([], [IDL.Vec(Receipt)], ['query']),
-    'getCheckingBalance' : IDL.Func([], [IDL.Float64], ['query']),
     'getFinancialOverview' : IDL.Func(
         [],
         [
           IDL.Record({
             'housingFund' : IDL.Float64,
             'savingsAmount' : IDL.Float64,
-            'checkingBalance' : IDL.Float64,
           }),
         ],
         ['query'],
@@ -162,24 +229,48 @@ export const idlFactory = ({ IDL }) => {
             'totalBills' : IDL.Float64,
             'savingsAmount' : IDL.Float64,
             'totalHouseholdGoods' : IDL.Float64,
-            'checkingBalance' : IDL.Float64,
+          }),
+        ],
+        ['query'],
+      ),
+    'getFinancialSummaryByUser' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Record({
+            'totalIncome' : IDL.Float64,
+            'totalBills' : IDL.Float64,
+            'totalHouseholdGoods' : IDL.Float64,
           }),
         ],
         ['query'],
       ),
     'getGrocerySpending' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
     'getHousingFund' : IDL.Func([], [IDL.Float64], ['query']),
+    'getIncomeEntriesByUser' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(Income)],
+        ['query'],
+      ),
     'getMonthlyIncomeTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
     'getMonthlyReceiptTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
     'getNonEssentialSpending' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
     'getNote' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+    'getReceiptEntriesByUser' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(Receipt)],
+        ['query'],
+      ),
     'getSavingsAmount' : IDL.Func([], [IDL.Float64], ['query']),
     'getTotalBills' : IDL.Func([], [IDL.Float64], ['query']),
     'getTotalHouseholdGoods' : IDL.Func([], [IDL.Float64], ['query']),
     'getTotalIncome' : IDL.Func([], [IDL.Float64], ['query']),
     'getWeeklyReceiptTotal' : IDL.Func([IDL.Text], [IDL.Float64], ['query']),
     'toggleChecklistItem' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-    'updateCheckingBalance' : IDL.Func([IDL.Float64], [], []),
+    'updateAccount' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Float64],
+        [],
+        [],
+      ),
     'updateGrocerySpending' : IDL.Func([IDL.Text, IDL.Float64], [], []),
     'updateHousingFund' : IDL.Func([IDL.Float64], [], []),
     'updateNonEssentialSpending' : IDL.Func([IDL.Text, IDL.Float64], [], []),

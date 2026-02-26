@@ -39,7 +39,10 @@ import {
   useAddReceiptEntry,
   useDeleteReceiptEntry,
   useUpdateReceiptCategory,
+  useAllAccounts,
 } from "@/hooks/useQueries";
+import { useActiveUser } from "@/hooks/useActiveUser";
+import { UserBadge } from "@/components/UserBadge";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -108,6 +111,7 @@ interface ReceiptFormState {
   mainCategory: MainCategory;
   subCategory: string;
   note: string;
+  accountId: string;
 }
 
 function defaultForm(): ReceiptFormState {
@@ -117,6 +121,7 @@ function defaultForm(): ReceiptFormState {
     mainCategory: "Bills",
     subCategory: defaultSubCategory("Bills"),
     note: "",
+    accountId: "",
   };
 }
 
@@ -226,10 +231,12 @@ interface ReceiptFormDialogProps {
   open: boolean;
   onClose: () => void;
   imagePreviewUrl: string | null;
+  activeUser: string;
 }
 
-function ReceiptFormDialog({ open, onClose, imagePreviewUrl }: ReceiptFormDialogProps) {
+function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: ReceiptFormDialogProps) {
   const addReceipt = useAddReceiptEntry();
+  const { data: accounts } = useAllAccounts();
   const [form, setForm] = useState<ReceiptFormState>(defaultForm);
 
   function updateMain(val: string) {
@@ -256,6 +263,10 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl }: ReceiptFormDialog
       toast.error("Please select a date.");
       return;
     }
+    if (!form.accountId) {
+      toast.error("Please select an account.");
+      return;
+    }
 
     try {
       await addReceipt.mutateAsync({
@@ -264,8 +275,10 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl }: ReceiptFormDialog
         mainCategory: form.mainCategory,
         subCategory: form.subCategory,
         note: form.note.trim() || null,
+        user: activeUser,
+        accountId: form.accountId,
       });
-      toast.success("Receipt saved!");
+      toast.success(`Receipt added by ${activeUser}!`);
       handleClose();
     } catch {
       toast.error("Failed to save receipt. Please try again.");
@@ -280,6 +293,17 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl }: ReceiptFormDialog
             <Receipt className="h-5 w-5 text-primary" />
             {imagePreviewUrl ? "Save Receipt" : "Add Receipt Manually"}
           </DialogTitle>
+          <p className="text-xs text-muted-foreground font-body pt-0.5">
+            Adding as{" "}
+            <span
+              className={cn(
+                "font-semibold",
+                activeUser === "Christopher" ? "text-blue-600" : "text-rose-600",
+              )}
+            >
+              {activeUser}
+            </span>
+          </p>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -369,6 +393,37 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl }: ReceiptFormDialog
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* From Account */}
+          <div className="space-y-1.5">
+            <Label className="font-semibold text-sm font-body">
+              From Account <span className="text-danger">*</span>
+            </Label>
+            {(accounts ?? []).length === 0 ? (
+              <Select disabled>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="No accounts — create one first" />
+                </SelectTrigger>
+                <SelectContent />
+              </Select>
+            ) : (
+              <Select
+                value={form.accountId}
+                onValueChange={(val) => setForm((f) => ({ ...f, accountId: val }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select an account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(accounts ?? []).map((acct) => (
+                    <SelectItem key={acct.id} value={acct.id}>
+                      {acct.name} ({acct.accountType})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Note */}
@@ -502,6 +557,7 @@ function EditCategoryInline({ id, currentMain, currentSub, onDone }: EditCategor
 // ── Main ReceiptsTab ───────────────────────────────────────────────────────────
 
 export function ReceiptsTab() {
+  const { activeUser } = useActiveUser();
   const { data: entries, isLoading } = useAllReceiptEntries();
   const deleteReceipt = useDeleteReceiptEntry();
 
@@ -740,7 +796,10 @@ export function ReceiptsTab() {
                 <div key={entry.id}>
                   <div className="flex items-center justify-between gap-3 px-3 py-3 rounded-xl bg-secondary border border-border/50">
                     <div className="min-w-0 flex-1 space-y-1">
-                      <MainCategoryBadge main={entry.mainCategory} sub={entry.subCategory} />
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <MainCategoryBadge main={entry.mainCategory} sub={entry.subCategory} />
+                        {entry.user && <UserBadge user={entry.user} />}
+                      </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-xs text-muted-foreground font-body">
                           {formatDisplayDate(entry.date)}
@@ -812,6 +871,7 @@ export function ReceiptsTab() {
         open={formOpen}
         onClose={handleFormClose}
         imagePreviewUrl={imagePreviewUrl}
+        activeUser={activeUser}
       />
     </div>
   );

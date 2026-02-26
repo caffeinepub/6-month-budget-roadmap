@@ -5,10 +5,10 @@ import { useActor } from "./useActor";
 
 export function useFinancialOverview() {
   const { actor, isFetching } = useActor();
-  return useQuery<{ housingFund: number; savingsAmount: number; checkingBalance: number }>({
+  return useQuery<{ housingFund: number; savingsAmount: number }>({
     queryKey: ["financialOverview"],
     queryFn: async () => {
-      if (!actor) return { housingFund: 0, savingsAmount: 10563, checkingBalance: 0 };
+      if (!actor) return { housingFund: 0, savingsAmount: 10563 };
       return actor.getFinancialOverview();
     },
     enabled: !!actor && !isFetching,
@@ -73,31 +73,24 @@ export function useUpdateHousingFund() {
   });
 }
 
-// ─── Checking Balance ─────────────────────────────────────────────────────────
+// ─── Checking Balance (deprecated — balance is now managed via Accounts) ──────
 
 export function useCheckingBalance() {
-  const { actor, isFetching } = useActor();
   return useQuery<number>({
     queryKey: ["checkingBalance"],
-    queryFn: async () => {
-      if (!actor) return 0;
-      return actor.getCheckingBalance();
-    },
-    enabled: !!actor && !isFetching,
+    queryFn: async () => 0,
+    enabled: false,
   });
 }
 
 export function useUpdateCheckingBalance() {
-  const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (amount: number) => {
-      if (!actor) return;
-      await actor.updateCheckingBalance(amount);
+    mutationFn: async (_amount: number) => {
+      // No-op: checking balance is now managed through individual accounts
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["checkingBalance"] });
-      qc.invalidateQueries({ queryKey: ["financialOverview"] });
     },
   });
 }
@@ -190,7 +183,6 @@ export function useFinancialSummary() {
   return useQuery<{
     savingsAmount: number;
     housingFund: number;
-    checkingBalance: number;
     totalIncome: number;
     totalBills: number;
     totalHouseholdGoods: number;
@@ -201,7 +193,6 @@ export function useFinancialSummary() {
         return {
           savingsAmount: 10563,
           housingFund: 0,
-          checkingBalance: 0,
           totalIncome: 0,
           totalBills: 0,
           totalHouseholdGoods: 0,
@@ -217,7 +208,7 @@ export function useFinancialSummary() {
 export function useAllIncomeEntries() {
   const { actor, isFetching } = useActor();
   return useQuery<
-    Array<{ id: string; date: string; note?: string; category: string; amount: number }>
+    Array<{ id: string; date: string; note?: string; user: string; category: string; amount: number }>
   >({
     queryKey: ["allIncomeEntries"],
     queryFn: async () => {
@@ -237,18 +228,23 @@ export function useAddIncomeEntry() {
       date,
       category,
       note,
+      user,
+      accountId,
     }: {
       amount: number;
       date: string;
       category: string;
       note: string | null;
+      user: string;
+      accountId: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addIncomeEntry(amount, date, category, note);
+      return actor.addIncomeEntry(amount, date, category, note, user, accountId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allIncomeEntries"] });
       qc.invalidateQueries({ queryKey: ["financialSummary"] });
+      qc.invalidateQueries({ queryKey: ["allAccounts"] });
     },
   });
 }
@@ -278,6 +274,7 @@ export function useAllReceiptEntries() {
       subCategory: string;
       date: string;
       note?: string;
+      user: string;
       amount: number;
       mainCategory: string;
     }>
@@ -301,19 +298,24 @@ export function useAddReceiptEntry() {
       mainCategory,
       subCategory,
       note,
+      user,
+      accountId,
     }: {
       amount: number;
       date: string;
       mainCategory: string;
       subCategory: string;
       note: string | null;
+      user: string;
+      accountId: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addReceiptEntry(amount, date, mainCategory, subCategory, note);
+      return actor.addReceiptEntry(amount, date, mainCategory, subCategory, note, user, accountId);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allReceiptEntries"] });
       qc.invalidateQueries({ queryKey: ["financialSummary"] });
+      qc.invalidateQueries({ queryKey: ["allAccounts"] });
     },
   });
 }
@@ -352,6 +354,80 @@ export function useUpdateReceiptCategory() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allReceiptEntries"] });
       qc.invalidateQueries({ queryKey: ["financialSummary"] });
+    },
+  });
+}
+
+// ─── Accounts ─────────────────────────────────────────────────────────────────
+
+export function useAllAccounts() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Array<{ id: string; balance: number; name: string; accountType: string }>>({
+    queryKey: ["allAccounts"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllAccounts();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useAddAccount() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      accountType,
+      initialBalance,
+    }: {
+      name: string;
+      accountType: string;
+      initialBalance: number;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.addAccount(name, accountType, initialBalance);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allAccounts"] });
+    },
+  });
+}
+
+export function useUpdateAccount() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      name,
+      accountType,
+      balance,
+    }: {
+      id: string;
+      name: string;
+      accountType: string;
+      balance: number;
+    }) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.updateAccount(id, name, accountType, balance);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allAccounts"] });
+    },
+  });
+}
+
+export function useDeleteAccount() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!actor) throw new Error("Actor not ready");
+      return actor.deleteAccount(id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allAccounts"] });
     },
   });
 }

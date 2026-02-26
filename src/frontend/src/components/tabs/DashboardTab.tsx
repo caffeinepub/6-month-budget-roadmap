@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,11 +15,14 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/StatusBadge";
+import { AiGuidancePanel } from "@/components/AiGuidancePanel";
 import { getCurrentWeekId, getWeekById, HOUSEHOLD } from "@/data/householdData";
 import {
   useFinancialSummary,
   useGrocerySpending,
   useAllChecklistStates,
+  useAllIncomeEntries,
+  useAllReceiptEntries,
 } from "@/hooks/useQueries";
 
 function fmt(n: number) {
@@ -29,16 +33,32 @@ export function DashboardTab() {
   const currentWeekId = getCurrentWeekId();
   const currentWeek = getWeekById(currentWeekId);
 
+  const [dashFilter, setDashFilter] = useState<"All" | "Christopher" | "Tamara">("All");
+
   const { data: overview, isLoading: overviewLoading } = useFinancialSummary();
   const { data: grocerySpent, isLoading: groceryLoading } = useGrocerySpending(currentWeekId);
   const { data: allStates } = useAllChecklistStates();
+  const { data: incomeEntries } = useAllIncomeEntries();
+  const { data: receiptEntries } = useAllReceiptEntries();
 
   const savingsVal = overview?.savingsAmount ?? HOUSEHOLD.savingsStart;
   const housingFund = overview?.housingFund ?? 0;
-  const checkingVal = overview?.checkingBalance ?? 0;
-  const totalIncome = overview?.totalIncome ?? 0;
-  const totalBills = overview?.totalBills ?? 0;
-  const totalHouseholdGoods = overview?.totalHouseholdGoods ?? 0;
+  const checkingVal = 0; // checkingBalance is now managed via Accounts
+
+  // Filtered totals for income/bills/goods
+  const filteredIncome = (incomeEntries ?? [])
+    .filter((e) => dashFilter === "All" || e.user === dashFilter)
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const filteredBills = (receiptEntries ?? [])
+    .filter((e) => e.mainCategory === "Bills" && (dashFilter === "All" || e.user === dashFilter))
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const filteredHouseholdGoods = (receiptEntries ?? [])
+    .filter(
+      (e) => e.mainCategory === "Household Goods" && (dashFilter === "All" || e.user === dashFilter),
+    )
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const savingsStatus: "green" | "yellow" | "red" =
     savingsVal >= HOUSEHOLD.savingsFloor + 500
@@ -253,63 +273,89 @@ export function DashboardTab() {
       </div>
 
       {/* Income & Spending Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        {/* Monthly Income */}
-        <Card className="card-shadow border-border">
-          <CardHeader className="pb-1 pt-3 px-3">
-            <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-success">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Income
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 pb-3">
-            {overviewLoading ? (
-              <Skeleton className="h-6 w-16" />
-            ) : (
-              <p className="text-base font-bold font-display text-success">
-                ${fmt(totalIncome)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+      <div className="space-y-3">
+        {/* Filter buttons */}
+        <div className="flex gap-2 items-center">
+          <span className="text-xs text-muted-foreground font-body">View:</span>
+          {(["All", "Christopher", "Tamara"] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setDashFilter(f)}
+              className={cn(
+                "text-xs font-semibold font-body px-3 py-1 rounded-full border transition-colors",
+                dashFilter === f
+                  ? f === "Christopher"
+                    ? "bg-blue-500 text-white border-blue-500"
+                    : f === "Tamara"
+                    ? "bg-rose-500 text-white border-rose-500"
+                    : "bg-primary text-primary-foreground border-primary"
+                  : "bg-transparent text-muted-foreground border-border hover:text-foreground",
+              )}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
 
-        {/* Total Bills */}
-        <Card className="card-shadow border-border">
-          <CardHeader className="pb-1 pt-3 px-3">
-            <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-warning">
-              <Receipt className="h-3.5 w-3.5" />
-              Bills
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 pb-3">
-            {overviewLoading ? (
-              <Skeleton className="h-6 w-16" />
-            ) : (
-              <p className="text-base font-bold font-display text-warning">
-                ${fmt(totalBills)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-3 gap-3">
+          {/* Monthly Income */}
+          <Card className="card-shadow border-border">
+            <CardHeader className="pb-1 pt-3 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-success">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Income
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3">
+              {overviewLoading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <p className="text-base font-bold font-display text-success">
+                  ${fmt(filteredIncome)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Household Goods */}
-        <Card className="card-shadow border-border">
-          <CardHeader className="pb-1 pt-3 px-3">
-            <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-primary">
-              <ShoppingBag className="h-3.5 w-3.5" />
-              Goods
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 pb-3">
-            {overviewLoading ? (
-              <Skeleton className="h-6 w-16" />
-            ) : (
-              <p className="text-base font-bold font-display text-primary">
-                ${fmt(totalHouseholdGoods)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          {/* Total Bills */}
+          <Card className="card-shadow border-border">
+            <CardHeader className="pb-1 pt-3 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-warning">
+                <Receipt className="h-3.5 w-3.5" />
+                Bills
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3">
+              {overviewLoading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <p className="text-base font-bold font-display text-warning">
+                  ${fmt(filteredBills)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Household Goods */}
+          <Card className="card-shadow border-border">
+            <CardHeader className="pb-1 pt-3 px-3">
+              <CardTitle className="flex items-center gap-1.5 text-xs font-display font-semibold text-primary">
+                <ShoppingBag className="h-3.5 w-3.5" />
+                Goods
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 pb-3">
+              {overviewLoading ? (
+                <Skeleton className="h-6 w-16" />
+              ) : (
+                <p className="text-base font-bold font-display text-primary">
+                  ${fmt(filteredHouseholdGoods)}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Bills Due Soon */}
@@ -367,6 +413,9 @@ export function DashboardTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* AI Guidance */}
+      <AiGuidancePanel />
     </div>
   );
 }

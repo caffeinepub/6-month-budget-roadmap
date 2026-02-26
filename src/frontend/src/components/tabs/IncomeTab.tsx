@@ -34,7 +34,10 @@ import {
   useAllIncomeEntries,
   useAddIncomeEntry,
   useDeleteIncomeEntry,
+  useAllAccounts,
 } from "@/hooks/useQueries";
+import { useActiveUser } from "@/hooks/useActiveUser";
+import { UserBadge } from "@/components/UserBadge";
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -94,6 +97,7 @@ interface AddIncomeFormState {
   date: string;
   category: string;
   note: string;
+  accountId: string;
 }
 
 const defaultForm: AddIncomeFormState = {
@@ -101,10 +105,13 @@ const defaultForm: AddIncomeFormState = {
   date: todayStr(),
   category: "",
   note: "",
+  accountId: "",
 };
 
 export function IncomeTab() {
+  const { activeUser } = useActiveUser();
   const { data: entries, isLoading } = useAllIncomeEntries();
+  const { data: accounts } = useAllAccounts();
   const addIncome = useAddIncomeEntry();
   const deleteIncome = useDeleteIncomeEntry();
 
@@ -150,6 +157,10 @@ export function IncomeTab() {
       toast.error("Please select a category.");
       return;
     }
+    if (!form.accountId) {
+      toast.error("Please select an account.");
+      return;
+    }
 
     try {
       await addIncome.mutateAsync({
@@ -157,8 +168,10 @@ export function IncomeTab() {
         date: form.date,
         category: form.category,
         note: form.note.trim() || null,
+        user: activeUser,
+        accountId: form.accountId,
       });
-      toast.success("Income added successfully!");
+      toast.success(`Income added by ${activeUser}!`);
       closeDialog();
     } catch {
       toast.error("Failed to add income. Please try again.");
@@ -288,7 +301,10 @@ export function IncomeTab() {
                   className="flex items-center justify-between gap-3 px-3 py-3 rounded-xl bg-secondary border border-border/50"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
-                    <CategoryBadge category={entry.category} />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <CategoryBadge category={entry.category} />
+                      {entry.user && <UserBadge user={entry.user} />}
+                    </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-muted-foreground font-body">
                         {formatDisplayDate(entry.date)}
@@ -334,6 +350,17 @@ export function IncomeTab() {
               <DollarSign className="h-5 w-5 text-primary" />
               Add Income
             </DialogTitle>
+            <p className="text-xs text-muted-foreground font-body pt-0.5">
+              Adding as{" "}
+              <span
+                className={cn(
+                  "font-semibold",
+                  activeUser === "Christopher" ? "text-blue-600" : "text-rose-600",
+                )}
+              >
+                {activeUser}
+              </span>
+            </p>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -393,6 +420,37 @@ export function IncomeTab() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* To Account */}
+            <div className="space-y-1.5">
+              <Label className="font-semibold text-sm font-body">
+                To Account <span className="text-danger">*</span>
+              </Label>
+              {(accounts ?? []).length === 0 ? (
+                <Select disabled>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No accounts — create one first" />
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              ) : (
+                <Select
+                  value={form.accountId}
+                  onValueChange={(val) => setForm((f) => ({ ...f, accountId: val }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(accounts ?? []).map((acct) => (
+                      <SelectItem key={acct.id} value={acct.id}>
+                        {acct.name} ({acct.accountType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Note (optional) */}

@@ -10,33 +10,47 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface Account {
+  'id' : string,
+  'balance' : number,
+  'name' : string,
+  'accountType' : string,
+}
 export interface Income {
   'id' : string,
+  'accountId' : string,
   'date' : string,
   'note' : [] | [string],
+  'user' : string,
   'category' : string,
   'amount' : number,
 }
 export interface Receipt {
   'id' : string,
   'subCategory' : string,
+  'accountId' : string,
   'date' : string,
   'note' : [] | [string],
+  'user' : string,
   'amount' : number,
   'mainCategory' : string,
 }
 export interface _SERVICE {
+  'addAccount' : ActorMethod<[string, string, number], string>,
   'addIncomeEntry' : ActorMethod<
-    [number, string, string, [] | [string]],
+    [number, string, string, [] | [string], string, string],
     string
   >,
   'addNote' : ActorMethod<[string, string], undefined>,
   'addReceiptEntry' : ActorMethod<
-    [number, string, string, string, [] | [string]],
+    [number, string, string, string, [] | [string], string, string],
     string
   >,
+  'deleteAccount' : ActorMethod<[string], undefined>,
   'deleteIncomeEntry' : ActorMethod<[string], undefined>,
   'deleteReceiptEntry' : ActorMethod<[string], undefined>,
+  'getAccount' : ActorMethod<[string], [] | [Account]>,
+  'getAllAccounts' : ActorMethod<[], Array<Account>>,
   'getAllChecklistStates' : ActorMethod<
     [],
     Array<[string, Array<[string, boolean]>]>
@@ -44,14 +58,9 @@ export interface _SERVICE {
   'getAllIncomeEntries' : ActorMethod<[], Array<Income>>,
   'getAllNotes' : ActorMethod<[], Array<[string, string]>>,
   'getAllReceiptEntries' : ActorMethod<[], Array<Receipt>>,
-  'getCheckingBalance' : ActorMethod<[], number>,
   'getFinancialOverview' : ActorMethod<
     [],
-    {
-      'housingFund' : number,
-      'savingsAmount' : number,
-      'checkingBalance' : number,
-    }
+    { 'housingFund' : number, 'savingsAmount' : number }
   >,
   'getFinancialSummary' : ActorMethod<
     [],
@@ -61,22 +70,31 @@ export interface _SERVICE {
       'totalBills' : number,
       'savingsAmount' : number,
       'totalHouseholdGoods' : number,
-      'checkingBalance' : number,
+    }
+  >,
+  'getFinancialSummaryByUser' : ActorMethod<
+    [string],
+    {
+      'totalIncome' : number,
+      'totalBills' : number,
+      'totalHouseholdGoods' : number,
     }
   >,
   'getGrocerySpending' : ActorMethod<[string], number>,
   'getHousingFund' : ActorMethod<[], number>,
+  'getIncomeEntriesByUser' : ActorMethod<[string], Array<Income>>,
   'getMonthlyIncomeTotal' : ActorMethod<[string], number>,
   'getMonthlyReceiptTotal' : ActorMethod<[string], number>,
   'getNonEssentialSpending' : ActorMethod<[string], number>,
   'getNote' : ActorMethod<[string], [] | [string]>,
+  'getReceiptEntriesByUser' : ActorMethod<[string], Array<Receipt>>,
   'getSavingsAmount' : ActorMethod<[], number>,
   'getTotalBills' : ActorMethod<[], number>,
   'getTotalHouseholdGoods' : ActorMethod<[], number>,
   'getTotalIncome' : ActorMethod<[], number>,
   'getWeeklyReceiptTotal' : ActorMethod<[string], number>,
   'toggleChecklistItem' : ActorMethod<[string, string], boolean>,
-  'updateCheckingBalance' : ActorMethod<[number], undefined>,
+  'updateAccount' : ActorMethod<[string, string, string, number], undefined>,
   'updateGrocerySpending' : ActorMethod<[string, number], undefined>,
   'updateHousingFund' : ActorMethod<[number], undefined>,
   'updateNonEssentialSpending' : ActorMethod<[string, number], undefined>,

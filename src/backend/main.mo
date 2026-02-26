@@ -1,23 +1,29 @@
+import List "mo:core/List";
 import Map "mo:core/Map";
 import Text "mo:core/Text";
-import Iter "mo:core/Iter";
-import Runtime "mo:core/Runtime";
-import Float "mo:core/Float";
-import Time "mo:core/Time";
-import List "mo:core/List";
-import Migration "migration";
 import Array "mo:core/Array";
-import Order "mo:core/Order";
-import Nat "mo:core/Nat";
+import Float "mo:core/Float";
+import Runtime "mo:core/Runtime";
+import Iter "mo:core/Iter";
+import Migration "migration";
 
 (with migration = Migration.run)
 actor {
+  type Account = {
+    id : Text;
+    name : Text;
+    accountType : Text; // "Checking" | "Savings" | "Credit Card" | "Other"
+    balance : Float;
+  };
+
   type Income = {
     id : Text;
     amount : Float;
     date : Text;
     category : Text; // "Social Security" | "Tamara Job Income" | "Other Income"
     note : ?Text;
+    user : Text; // "Christopher" | "Tamara"
+    accountId : Text;
   };
 
   type Receipt = {
@@ -27,30 +33,83 @@ actor {
     mainCategory : Text; // "Bills" | "Household Goods"
     subCategory : Text; // Bills: "Credit Card", "Auto Insurance", "Utilities", "Loans", "Other"
     note : ?Text;
+    user : Text; // "Christopher" | "Tamara"
+    accountId : Text;
   };
 
   var savingsAmount : Float = 10563.0;
   var housingFund : Float = 0.0;
-  var checkingBalance : Float = 0.0;
 
   let checklist = Map.empty<Text, Map.Map<Text, Bool>>();
   let grocerySpending = Map.empty<Text, Float>();
   let nonEssentialSpending = Map.empty<Text, Float>();
   let notes = Map.empty<Text, Text>();
 
+  let accounts = Map.empty<Text, Account>();
   let incomeEntries = Map.empty<Text, Income>();
   let receiptEntries = Map.empty<Text, Receipt>();
 
   var nextId = 0;
 
+  // Account Management
+  public shared ({ caller }) func addAccount(name : Text, accountType : Text, initialBalance : Float) : async Text {
+    validateAccountType(accountType);
+    if (name == "") { Runtime.trap("Account name cannot be empty") };
+
+    let id = nextId.toText();
+    let account : Account = {
+      id;
+      name;
+      accountType;
+      balance = initialBalance;
+    };
+    accounts.add(id, account);
+    nextId += 1;
+    id;
+  };
+
+  public shared ({ caller }) func updateAccount(id : Text, name : Text, accountType : Text, balance : Float) : async () {
+    validateAccountType(accountType);
+    if (name == "") { Runtime.trap("Account name cannot be empty") };
+
+    switch (accounts.get(id)) {
+      case (null) { Runtime.trap("Account not found") };
+      case (?_) {
+        let updatedAccount : Account = {
+          id;
+          name;
+          accountType;
+          balance;
+        };
+        accounts.add(id, updatedAccount);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteAccount(id : Text) : async () {
+    if (not accounts.containsKey(id)) {
+      Runtime.trap("Account not found");
+    };
+    accounts.remove(id);
+  };
+
+  public query ({ caller }) func getAllAccounts() : async [Account] {
+    accounts.values().toArray();
+  };
+
+  public query ({ caller }) func getAccount(id : Text) : async ?Account {
+    accounts.get(id);
+  };
+
+  // Checklist Functions
   public shared ({ caller }) func toggleChecklistItem(group : Text, item : Text) : async Bool {
     if (group == "") { Runtime.trap("Group label cannot be empty") };
     if (item == "") { Runtime.trap("Item label cannot be empty") };
 
     let currentState = switch (checklist.get(group)) {
       case (null) { false };
-      case (?weekMap) {
-        switch (weekMap.get(item)) {
+      case (?groupMap) {
+        switch (groupMap.get(item)) {
           case (null) { false };
           case (?state) { state };
         };
@@ -68,9 +127,10 @@ actor {
   };
 
   public query ({ caller }) func getAllChecklistStates() : async [(Text, [(Text, Bool)])] {
-    checklist.toArray().map(func((group, weekMap)) { (group, weekMap.toArray()) });
+    checklist.toArray().map(func((group, groupMap)) { (group, groupMap.toArray()) });
   };
 
+  // Financial Amount Functions
   public shared ({ caller }) func updateSavingsAmount(amount : Float) : async () {
     savingsAmount := amount;
   };
@@ -85,14 +145,6 @@ actor {
 
   public query ({ caller }) func getHousingFund() : async Float {
     housingFund;
-  };
-
-  public shared ({ caller }) func updateCheckingBalance(amount : Float) : async () {
-    checkingBalance := amount;
-  };
-
-  public query ({ caller }) func getCheckingBalance() : async Float {
-    checkingBalance;
   };
 
   public shared ({ caller }) func updateGrocerySpending(week : Text, amount : Float) : async () {
@@ -135,28 +187,38 @@ actor {
   public query ({ caller }) func getFinancialOverview() : async {
     savingsAmount : Float;
     housingFund : Float;
-    checkingBalance : Float;
   } {
     {
       savingsAmount;
       housingFund;
-      checkingBalance;
     };
   };
 
-  public shared ({ caller }) func addIncomeEntry(amount : Float, date : Text, category : Text, note : ?Text) : async Text {
+  // Income Management
+  public shared ({ caller }) func addIncomeEntry(amount : Float, date : Text, category : Text, note : ?Text, user : Text, accountId : Text) : async Text {
     validateIncomeCategory(category);
-    let id = nextId.toText();
-    let entry : Income = {
-      id;
-      amount;
-      date;
-      category;
-      note;
+    validateUser(user);
+
+    switch (accounts.get(accountId)) {
+      case (null) { Runtime.trap("Account not found") };
+      case (?_) {
+        let id = nextId.toText();
+        let entry : Income = {
+          id;
+          amount;
+          date;
+          category;
+          note;
+          user;
+          accountId;
+        };
+        incomeEntries.add(id, entry);
+
+        updateAccountBalance(accountId, amount);
+        nextId += 1;
+        id;
+      };
     };
-    incomeEntries.add(id, entry);
-    nextId += 1;
-    id;
   };
 
   public shared ({ caller }) func deleteIncomeEntry(id : Text) : async () {
@@ -188,20 +250,32 @@ actor {
     total;
   };
 
-  public shared ({ caller }) func addReceiptEntry(amount : Float, date : Text, mainCategory : Text, subCategory : Text, note : ?Text) : async Text {
+  // Receipt Management
+  public shared ({ caller }) func addReceiptEntry(amount : Float, date : Text, mainCategory : Text, subCategory : Text, note : ?Text, user : Text, accountId : Text) : async Text {
     validateReceiptCategory(mainCategory, subCategory);
-    let id = nextId.toText();
-    let entry : Receipt = {
-      id;
-      amount;
-      date;
-      mainCategory;
-      subCategory;
-      note;
+    validateUser(user);
+
+    switch (accounts.get(accountId)) {
+      case (null) { Runtime.trap("Account not found") };
+      case (?_) {
+        let id = nextId.toText();
+        let entry : Receipt = {
+          id;
+          amount;
+          date;
+          mainCategory;
+          subCategory;
+          note;
+          user;
+          accountId;
+        };
+        receiptEntries.add(id, entry);
+
+        updateAccountBalance(accountId, -amount);
+        nextId += 1;
+        id;
+      };
     };
-    receiptEntries.add(id, entry);
-    nextId += 1;
-    id;
   };
 
   public shared ({ caller }) func deleteReceiptEntry(id : Text) : async () {
@@ -284,7 +358,6 @@ actor {
   public query ({ caller }) func getFinancialSummary() : async {
     savingsAmount : Float;
     housingFund : Float;
-    checkingBalance : Float;
     totalIncome : Float;
     totalBills : Float;
     totalHouseholdGoods : Float;
@@ -296,21 +369,19 @@ actor {
     {
       savingsAmount;
       housingFund;
-      checkingBalance;
       totalIncome;
       totalBills;
       totalHouseholdGoods;
     };
   };
 
-  // Helper function to calculate total income without await
+  // Helper functions for calculations
   func getTotalIncomeHelper() : Float {
     var total : Float = 0.0;
     incomeEntries.values().forEach(func(e) { total += e.amount });
     total;
   };
 
-  // Helper function to calculate total bills without await
   func getTotalBillsHelper() : Float {
     var total : Float = 0.0;
     receiptEntries.values().forEach(
@@ -323,7 +394,6 @@ actor {
     total;
   };
 
-  // Helper function to calculate total household goods without await
   func getTotalHouseholdGoodsHelper() : Float {
     var total : Float = 0.0;
     receiptEntries.values().forEach(
@@ -336,6 +406,80 @@ actor {
     total;
   };
 
+  func getTotalIncomeByUser(user : Text) : Float {
+    var total : Float = 0.0;
+    incomeEntries.values().forEach(
+      func(e) {
+        if (e.user == user) {
+          total += e.amount;
+        };
+      }
+    );
+    total;
+  };
+
+  func getTotalBillsByUser(user : Text) : Float {
+    var total : Float = 0.0;
+    receiptEntries.values().forEach(
+      func(e) {
+        if (e.user == user and e.mainCategory == "Bills") {
+          total += e.amount;
+        };
+      }
+    );
+    total;
+  };
+
+  func getTotalHouseholdGoodsByUser(user : Text) : Float {
+    var total : Float = 0.0;
+    receiptEntries.values().forEach(
+      func(e) {
+        if (e.user == user and e.mainCategory == "Household Goods") {
+          total += e.amount;
+        };
+      }
+    );
+    total;
+  };
+
+  // New User-Specific Queries
+  public query ({ caller }) func getIncomeEntriesByUser(user : Text) : async [Income] {
+    let filtered = List.empty<Income>();
+    incomeEntries.values().forEach(
+      func(entry) {
+        if (entry.user == user) {
+          filtered.add(entry);
+        };
+      }
+    );
+    filtered.toArray();
+  };
+
+  public query ({ caller }) func getReceiptEntriesByUser(user : Text) : async [Receipt] {
+    let filtered = List.empty<Receipt>();
+    receiptEntries.values().forEach(
+      func(entry) {
+        if (entry.user == user) {
+          filtered.add(entry);
+        };
+      }
+    );
+    filtered.toArray();
+  };
+
+  public query ({ caller }) func getFinancialSummaryByUser(user : Text) : async {
+    totalIncome : Float;
+    totalBills : Float;
+    totalHouseholdGoods : Float;
+  } {
+    {
+      totalIncome = getTotalIncomeByUser(user);
+      totalBills = getTotalBillsByUser(user);
+      totalHouseholdGoods = getTotalHouseholdGoodsByUser(user);
+    };
+  };
+
+  // Validation Functions
   func validateIncomeCategory(category : Text) {
     switch (category) {
       case ("Social Security") {};
@@ -368,6 +512,36 @@ actor {
         };
       };
       case (_) { Runtime.trap("Invalid main category") };
+    };
+  };
+
+  func validateUser(user : Text) {
+    switch (user) {
+      case ("Christopher") {};
+      case ("Tamara") {};
+      case (_) { Runtime.trap("Invalid user") };
+    };
+  };
+
+  func validateAccountType(accountType : Text) {
+    switch (accountType) {
+      case ("Checking") {};
+      case ("Savings") {};
+      case ("Credit Card") {};
+      case ("Other") {};
+      case (_) { Runtime.trap("Invalid account type") };
+    };
+  };
+
+  func updateAccountBalance(accountId : Text, amount : Float) {
+    switch (accounts.get(accountId)) {
+      case (null) { Runtime.trap("Account not found") };
+      case (?account) {
+        let updatedAccount = {
+          account with balance = account.balance + amount
+        };
+        accounts.add(accountId, updatedAccount);
+      };
     };
   };
 };

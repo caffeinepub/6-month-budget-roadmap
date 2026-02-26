@@ -92,33 +92,45 @@ export class ExternalBlob {
 export interface Receipt {
     id: string;
     subCategory: string;
+    accountId: string;
     date: string;
     note?: string;
+    user: string;
     amount: number;
     mainCategory: string;
 }
+export interface Account {
+    id: string;
+    balance: number;
+    name: string;
+    accountType: string;
+}
 export interface Income {
     id: string;
+    accountId: string;
     date: string;
     note?: string;
+    user: string;
     category: string;
     amount: number;
 }
 export interface backendInterface {
-    addIncomeEntry(amount: number, date: string, category: string, note: string | null): Promise<string>;
+    addAccount(name: string, accountType: string, initialBalance: number): Promise<string>;
+    addIncomeEntry(amount: number, date: string, category: string, note: string | null, user: string, accountId: string): Promise<string>;
     addNote(week: string, note: string): Promise<void>;
-    addReceiptEntry(amount: number, date: string, mainCategory: string, subCategory: string, note: string | null): Promise<string>;
+    addReceiptEntry(amount: number, date: string, mainCategory: string, subCategory: string, note: string | null, user: string, accountId: string): Promise<string>;
+    deleteAccount(id: string): Promise<void>;
     deleteIncomeEntry(id: string): Promise<void>;
     deleteReceiptEntry(id: string): Promise<void>;
+    getAccount(id: string): Promise<Account | null>;
+    getAllAccounts(): Promise<Array<Account>>;
     getAllChecklistStates(): Promise<Array<[string, Array<[string, boolean]>]>>;
     getAllIncomeEntries(): Promise<Array<Income>>;
     getAllNotes(): Promise<Array<[string, string]>>;
     getAllReceiptEntries(): Promise<Array<Receipt>>;
-    getCheckingBalance(): Promise<number>;
     getFinancialOverview(): Promise<{
         housingFund: number;
         savingsAmount: number;
-        checkingBalance: number;
     }>;
     getFinancialSummary(): Promise<{
         totalIncome: number;
@@ -126,41 +138,61 @@ export interface backendInterface {
         totalBills: number;
         savingsAmount: number;
         totalHouseholdGoods: number;
-        checkingBalance: number;
+    }>;
+    getFinancialSummaryByUser(user: string): Promise<{
+        totalIncome: number;
+        totalBills: number;
+        totalHouseholdGoods: number;
     }>;
     getGrocerySpending(week: string): Promise<number>;
     getHousingFund(): Promise<number>;
+    getIncomeEntriesByUser(user: string): Promise<Array<Income>>;
     getMonthlyIncomeTotal(month: string): Promise<number>;
     getMonthlyReceiptTotal(month: string): Promise<number>;
     getNonEssentialSpending(week: string): Promise<number>;
     getNote(week: string): Promise<string | null>;
+    getReceiptEntriesByUser(user: string): Promise<Array<Receipt>>;
     getSavingsAmount(): Promise<number>;
     getTotalBills(): Promise<number>;
     getTotalHouseholdGoods(): Promise<number>;
     getTotalIncome(): Promise<number>;
     getWeeklyReceiptTotal(week: string): Promise<number>;
     toggleChecklistItem(group: string, item: string): Promise<boolean>;
-    updateCheckingBalance(amount: number): Promise<void>;
+    updateAccount(id: string, name: string, accountType: string, balance: number): Promise<void>;
     updateGrocerySpending(week: string, amount: number): Promise<void>;
     updateHousingFund(amount: number): Promise<void>;
     updateNonEssentialSpending(week: string, amount: number): Promise<void>;
     updateReceiptCategory(id: string, mainCategory: string, subCategory: string): Promise<void>;
     updateSavingsAmount(amount: number): Promise<void>;
 }
-import type { Income as _Income, Receipt as _Receipt } from "./declarations/backend.did.d.ts";
+import type { Account as _Account, Income as _Income, Receipt as _Receipt } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async addIncomeEntry(arg0: number, arg1: string, arg2: string, arg3: string | null): Promise<string> {
+    async addAccount(arg0: string, arg1: string, arg2: number): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.addIncomeEntry(arg0, arg1, arg2, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg3));
+                const result = await this.actor.addAccount(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addIncomeEntry(arg0, arg1, arg2, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg3));
+            const result = await this.actor.addAccount(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async addIncomeEntry(arg0: number, arg1: string, arg2: string, arg3: string | null, arg4: string, arg5: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addIncomeEntry(arg0, arg1, arg2, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg3), arg4, arg5);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addIncomeEntry(arg0, arg1, arg2, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg3), arg4, arg5);
             return result;
         }
     }
@@ -178,17 +210,31 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addReceiptEntry(arg0: number, arg1: string, arg2: string, arg3: string, arg4: string | null): Promise<string> {
+    async addReceiptEntry(arg0: number, arg1: string, arg2: string, arg3: string, arg4: string | null, arg5: string, arg6: string): Promise<string> {
         if (this.processError) {
             try {
-                const result = await this.actor.addReceiptEntry(arg0, arg1, arg2, arg3, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg4));
+                const result = await this.actor.addReceiptEntry(arg0, arg1, arg2, arg3, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg4), arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addReceiptEntry(arg0, arg1, arg2, arg3, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg4));
+            const result = await this.actor.addReceiptEntry(arg0, arg1, arg2, arg3, to_candid_opt_n1(this._uploadFile, this._downloadFile, arg4), arg5, arg6);
+            return result;
+        }
+    }
+    async deleteAccount(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteAccount(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteAccount(arg0);
             return result;
         }
     }
@@ -220,6 +266,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getAccount(arg0: string): Promise<Account | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAccount(arg0);
+                return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAccount(arg0);
+            return from_candid_opt_n2(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllAccounts(): Promise<Array<Account>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllAccounts();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllAccounts();
+            return result;
+        }
+    }
     async getAllChecklistStates(): Promise<Array<[string, Array<[string, boolean]>]>> {
         if (this.processError) {
             try {
@@ -238,14 +312,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllIncomeEntries();
-                return from_candid_vec_n2(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n3(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllIncomeEntries();
-            return from_candid_vec_n2(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n3(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAllNotes(): Promise<Array<[string, string]>> {
@@ -266,34 +340,19 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getAllReceiptEntries();
-                return from_candid_vec_n6(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getAllReceiptEntries();
-            return from_candid_vec_n6(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCheckingBalance(): Promise<number> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCheckingBalance();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCheckingBalance();
-            return result;
+            return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
         }
     }
     async getFinancialOverview(): Promise<{
         housingFund: number;
         savingsAmount: number;
-        checkingBalance: number;
     }> {
         if (this.processError) {
             try {
@@ -314,7 +373,6 @@ export class Backend implements backendInterface {
         totalBills: number;
         savingsAmount: number;
         totalHouseholdGoods: number;
-        checkingBalance: number;
     }> {
         if (this.processError) {
             try {
@@ -326,6 +384,24 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getFinancialSummary();
+            return result;
+        }
+    }
+    async getFinancialSummaryByUser(arg0: string): Promise<{
+        totalIncome: number;
+        totalBills: number;
+        totalHouseholdGoods: number;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFinancialSummaryByUser(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFinancialSummaryByUser(arg0);
             return result;
         }
     }
@@ -355,6 +431,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getHousingFund();
             return result;
+        }
+    }
+    async getIncomeEntriesByUser(arg0: string): Promise<Array<Income>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getIncomeEntriesByUser(arg0);
+                return from_candid_vec_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getIncomeEntriesByUser(arg0);
+            return from_candid_vec_n3(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMonthlyIncomeTotal(arg0: string): Promise<number> {
@@ -403,14 +493,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getNote(arg0);
-                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n6(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getNote(arg0);
-            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n6(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getReceiptEntriesByUser(arg0: string): Promise<Array<Receipt>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getReceiptEntriesByUser(arg0);
+                return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getReceiptEntriesByUser(arg0);
+            return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
         }
     }
     async getSavingsAmount(): Promise<number> {
@@ -497,17 +601,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async updateCheckingBalance(arg0: number): Promise<void> {
+    async updateAccount(arg0: string, arg1: string, arg2: string, arg3: number): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateCheckingBalance(arg0);
+                const result = await this.actor.updateAccount(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateCheckingBalance(arg0);
+            const result = await this.actor.updateAccount(arg0, arg1, arg2, arg3);
             return result;
         }
     }
@@ -582,65 +686,80 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_Income_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Income): Income {
-    return from_candid_record_n4(_uploadFile, _downloadFile, value);
+function from_candid_Income_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Income): Income {
+    return from_candid_record_n5(_uploadFile, _downloadFile, value);
 }
-function from_candid_Receipt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Receipt): Receipt {
-    return from_candid_record_n8(_uploadFile, _downloadFile, value);
+function from_candid_Receipt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Receipt): Receipt {
+    return from_candid_record_n9(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+function from_candid_opt_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Account]): Account | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: string;
+    accountId: string;
     date: string;
     note: [] | [string];
+    user: string;
     category: string;
     amount: number;
 }): {
     id: string;
+    accountId: string;
     date: string;
     note?: string;
+    user: string;
     category: string;
     amount: number;
 } {
     return {
         id: value.id,
+        accountId: value.accountId,
         date: value.date,
-        note: record_opt_to_undefined(from_candid_opt_n5(_uploadFile, _downloadFile, value.note)),
+        note: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.note)),
+        user: value.user,
         category: value.category,
         amount: value.amount
     };
 }
-function from_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: string;
     subCategory: string;
+    accountId: string;
     date: string;
     note: [] | [string];
+    user: string;
     amount: number;
     mainCategory: string;
 }): {
     id: string;
     subCategory: string;
+    accountId: string;
     date: string;
     note?: string;
+    user: string;
     amount: number;
     mainCategory: string;
 } {
     return {
         id: value.id,
         subCategory: value.subCategory,
+        accountId: value.accountId,
         date: value.date,
-        note: record_opt_to_undefined(from_candid_opt_n5(_uploadFile, _downloadFile, value.note)),
+        note: record_opt_to_undefined(from_candid_opt_n6(_uploadFile, _downloadFile, value.note)),
+        user: value.user,
         amount: value.amount,
         mainCategory: value.mainCategory
     };
 }
-function from_candid_vec_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Income>): Array<Income> {
-    return value.map((x)=>from_candid_Income_n3(_uploadFile, _downloadFile, x));
+function from_candid_vec_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Income>): Array<Income> {
+    return value.map((x)=>from_candid_Income_n4(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Receipt>): Array<Receipt> {
-    return value.map((x)=>from_candid_Receipt_n7(_uploadFile, _downloadFile, x));
+function from_candid_vec_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Receipt>): Array<Receipt> {
+    return value.map((x)=>from_candid_Receipt_n8(_uploadFile, _downloadFile, x));
 }
 function to_candid_opt_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
     return value === null ? candid_none() : candid_some(value);

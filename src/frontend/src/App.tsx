@@ -9,7 +9,10 @@ import {
   Heart,
   DollarSign,
   ScanLine,
+  CalendarCheck,
+  Wallet,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { DashboardTab } from "@/components/tabs/DashboardTab";
 import { Month1RoadmapTab } from "@/components/tabs/Month1RoadmapTab";
 import { Months2to6Tab } from "@/components/tabs/Months2to6Tab";
@@ -17,8 +20,13 @@ import { SavingsHousingTab } from "@/components/tabs/SavingsHousingTab";
 import { RulesTab } from "@/components/tabs/RulesTab";
 import { IncomeTab } from "@/components/tabs/IncomeTab";
 import { ReceiptsTab } from "@/components/tabs/ReceiptsTab";
+import { WeeklySummaryTab } from "@/components/tabs/WeeklySummaryTab";
+import { AccountsTab } from "@/components/tabs/AccountsTab";
+import { useActiveUser } from "@/hooks/useActiveUser";
 
 export default function App() {
+  const { activeUser, setActiveUser } = useActiveUser();
+
   return (
     <div className="app-bg min-h-screen">
       <Toaster />
@@ -29,13 +37,40 @@ export default function App() {
           <div className="p-2 rounded-xl bg-primary/10">
             <MapIcon className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold font-display text-foreground leading-tight">
               6-Month Budget Roadmap
             </h1>
             <p className="text-xs text-muted-foreground font-body leading-tight">
               Christopher & Tamara · Family of 5
             </p>
+          </div>
+          {/* Active user toggle pill */}
+          <div className="bg-secondary border border-border rounded-full p-0.5 flex gap-0.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveUser("Christopher")}
+              className={cn(
+                "text-xs font-semibold font-body px-3 py-1 rounded-full transition-colors",
+                activeUser === "Christopher"
+                  ? "bg-blue-500 text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Christopher
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveUser("Tamara")}
+              className={cn(
+                "text-xs font-semibold font-body px-3 py-1 rounded-full transition-colors",
+                activeUser === "Tamara"
+                  ? "bg-rose-500 text-white"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Tamara
+            </button>
           </div>
         </div>
       </header>
@@ -44,7 +79,7 @@ export default function App() {
       <main className="max-w-2xl mx-auto px-4 pb-24">
         <Tabs defaultValue="dashboard" className="mt-5">
           {/* Tab nav */}
-          <TabsList className="w-full h-auto grid grid-cols-7 bg-card border border-border p-1 rounded-xl mb-6 card-shadow">
+          <TabsList className="w-full h-auto grid grid-cols-9 bg-card border border-border p-1 rounded-xl mb-6 card-shadow">
             <TabsTrigger
               value="dashboard"
               className="flex flex-col items-center gap-0.5 py-2 px-1 text-xs font-display font-semibold rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
@@ -95,6 +130,20 @@ export default function App() {
               <ScanLine className="h-4 w-4" />
               <span className="text-[10px]">Receipts</span>
             </TabsTrigger>
+            <TabsTrigger
+              value="summary"
+              className="flex flex-col items-center gap-0.5 py-2 px-1 text-xs font-display font-semibold rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+            >
+              <CalendarCheck className="h-4 w-4" />
+              <span className="text-[10px]">Summary</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="accounts"
+              className="flex flex-col items-center gap-0.5 py-2 px-1 text-xs font-display font-semibold rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+            >
+              <Wallet className="h-4 w-4" />
+              <span className="text-[10px]">Accounts</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-0 focus-visible:outline-none">
@@ -117,6 +166,12 @@ export default function App() {
           </TabsContent>
           <TabsContent value="receipts" className="mt-0 focus-visible:outline-none">
             <ReceiptsTab />
+          </TabsContent>
+          <TabsContent value="summary" className="mt-0 focus-visible:outline-none">
+            <WeeklySummaryTab />
+          </TabsContent>
+          <TabsContent value="accounts" className="mt-0 focus-visible:outline-none">
+            <AccountsTab />
           </TabsContent>
         </Tabs>
       </main>
