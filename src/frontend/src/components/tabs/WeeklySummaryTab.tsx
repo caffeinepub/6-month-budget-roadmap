@@ -1,16 +1,16 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarCheck, Trash2, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { HOUSEHOLD, getCurrentWeekId, getWeekById } from "@/data/householdData";
 import {
-  useFinancialSummary,
+  useAllChecklistStates,
   useAllIncomeEntries,
   useAllReceiptEntries,
-  useAllChecklistStates,
+  useFinancialSummary,
   useGrocerySpending,
 } from "@/hooks/useQueries";
-import { getCurrentWeekId, getWeekById, HOUSEHOLD } from "@/data/householdData";
+import { cn } from "@/lib/utils";
+import { CalendarCheck, FileText, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,10 @@ function saveSummaries(summaries: WeeklySummary[]) {
 // ─── Formatting helpers ───────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function formatDateTime(isoString: string): string {
@@ -98,15 +101,20 @@ function buildSummaryText(d: SummaryData): string {
 
   const savingsStr = `Savings are at $${fmt(d.savings)} (floor: $7,500) and your Housing Fund stands at $${fmt(d.housingFund)}.`;
 
-  let encouragement = "Keep going — every good week builds your path to that 4-bedroom home.";
+  let encouragement =
+    "Keep going — every good week builds your path to that 4-bedroom home.";
   if (d.savings >= HOUSEHOLD.savingsFloor + 1000 && d.housingFund > 0) {
-    encouragement = "Savings and the Housing Fund are both moving in the right direction — great momentum.";
+    encouragement =
+      "Savings and the Housing Fund are both moving in the right direction — great momentum.";
   } else if (d.savings < HOUSEHOLD.savingsFloor) {
-    encouragement = "Focus on rebuilding that savings floor first — it protects the whole family.";
+    encouragement =
+      "Focus on rebuilding that savings floor first — it protects the whole family.";
   } else if (d.housingFund >= HOUSEHOLD.housingFundGoal) {
-    encouragement = "The Housing Fund has hit the goal — that's a major win. Keep protecting it.";
+    encouragement =
+      "The Housing Fund has hit the goal — that's a major win. Keep protecting it.";
   } else if (d.savings >= HOUSEHOLD.savingsFloor) {
-    encouragement = "Savings are healthy. Stay the course and keep adding to the Housing Fund.";
+    encouragement =
+      "Savings are healthy. Stay the course and keep adding to the Housing Fund.";
   }
 
   return [
@@ -128,7 +136,9 @@ export function WeeklySummaryTab() {
   const currentWeekId = getCurrentWeekId();
   const currentWeek = getWeekById(currentWeekId);
 
-  const [summaries, setSummaries] = useState<WeeklySummary[]>(() => loadSummaries());
+  const [summaries, setSummaries] = useState<WeeklySummary[]>(() =>
+    loadSummaries(),
+  );
   const [generating, setGenerating] = useState(false);
 
   const { data: financialSummary } = useFinancialSummary();
@@ -155,7 +165,9 @@ export function WeeklySummaryTab() {
 
     // Count checklist tasks done for current week
     let checklistDone = 0;
-    const weekEntry = checklistStates.find(([group]) => group === currentWeekId);
+    const weekEntry = checklistStates.find(
+      ([group]) => group === currentWeekId,
+    );
     if (weekEntry) {
       checklistDone = weekEntry[1].filter(([, done]) => done).length;
     }
@@ -204,7 +216,8 @@ export function WeeklySummaryTab() {
           Weekly Summary
         </h2>
         <p className="text-muted-foreground mt-1 font-body text-sm">
-          Generate a snapshot of this week's progress — income, receipts, checklists, and finances.
+          Generate a snapshot of this week's progress — income, receipts,
+          checklists, and finances.
         </p>
       </div>
 

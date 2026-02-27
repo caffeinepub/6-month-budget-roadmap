@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Check, Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface AmountInputProps {
   label: string;
@@ -30,8 +30,8 @@ export function AmountInput({
   const [saved, setSaved] = useState(false);
 
   function handleSave() {
-    const parsed = parseFloat(inputVal);
-    if (isNaN(parsed) || parsed < 0) return;
+    const parsed = Number.parseFloat(inputVal);
+    if (Number.isNaN(parsed) || parsed < 0) return;
     onSave(parsed);
     setInputVal("");
     setSaved(true);
@@ -48,7 +48,10 @@ export function AmountInput({
       ) : (
         <p className="text-2xl font-bold font-display text-foreground">
           {prefix}
-          {currentValue?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) ?? "—"}
+          {currentValue?.toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }) ?? "—"}
         </p>
       )}
       <div className="flex gap-2">

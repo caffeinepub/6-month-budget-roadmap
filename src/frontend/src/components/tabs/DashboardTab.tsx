@@ -1,42 +1,48 @@
-import { useState } from "react";
+import { AiGuidancePanel } from "@/components/AiGuidancePanel";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HOUSEHOLD, getCurrentWeekId, getWeekById } from "@/data/householdData";
 import {
-  Receipt,
-  ShoppingCart,
-  Wallet,
-  PiggyBank,
-  Home,
-  CheckCircle2,
-  AlertTriangle,
-  TrendingUp,
-  ShoppingBag,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { StatusBadge } from "@/components/StatusBadge";
-import { AiGuidancePanel } from "@/components/AiGuidancePanel";
-import { getCurrentWeekId, getWeekById, HOUSEHOLD } from "@/data/householdData";
-import {
-  useFinancialSummary,
-  useGrocerySpending,
   useAllChecklistStates,
   useAllIncomeEntries,
   useAllReceiptEntries,
+  useFinancialSummary,
+  useGrocerySpending,
 } from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Home,
+  PiggyBank,
+  Receipt,
+  ShoppingBag,
+  ShoppingCart,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+import { useState } from "react";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function DashboardTab() {
   const currentWeekId = getCurrentWeekId();
   const currentWeek = getWeekById(currentWeekId);
 
-  const [dashFilter, setDashFilter] = useState<"All" | "Christopher" | "Tamara">("All");
+  const [dashFilter, setDashFilter] = useState<
+    "All" | "Christopher" | "Tamara"
+  >("All");
 
   const { data: overview, isLoading: overviewLoading } = useFinancialSummary();
-  const { data: grocerySpent, isLoading: groceryLoading } = useGrocerySpending(currentWeekId);
+  const { data: grocerySpent, isLoading: groceryLoading } =
+    useGrocerySpending(currentWeekId);
   const { data: allStates } = useAllChecklistStates();
   const { data: incomeEntries } = useAllIncomeEntries();
   const { data: receiptEntries } = useAllReceiptEntries();
@@ -51,12 +57,18 @@ export function DashboardTab() {
     .reduce((sum, e) => sum + e.amount, 0);
 
   const filteredBills = (receiptEntries ?? [])
-    .filter((e) => e.mainCategory === "Bills" && (dashFilter === "All" || e.user === dashFilter))
+    .filter(
+      (e) =>
+        e.mainCategory === "Bills" &&
+        (dashFilter === "All" || e.user === dashFilter),
+    )
     .reduce((sum, e) => sum + e.amount, 0);
 
   const filteredHouseholdGoods = (receiptEntries ?? [])
     .filter(
-      (e) => e.mainCategory === "Household Goods" && (dashFilter === "All" || e.user === dashFilter),
+      (e) =>
+        e.mainCategory === "Household Goods" &&
+        (dashFilter === "All" || e.user === dashFilter),
     )
     .reduce((sum, e) => sum + e.amount, 0);
 
@@ -64,23 +76,29 @@ export function DashboardTab() {
     savingsVal >= HOUSEHOLD.savingsFloor + 500
       ? "green"
       : savingsVal >= HOUSEHOLD.savingsFloor
-      ? "yellow"
-      : "red";
+        ? "yellow"
+        : "red";
 
-  const checkingStatus: "green" | "red" = checkingVal >= HOUSEHOLD.checkingBuffer ? "green" : "red";
+  const checkingStatus: "green" | "red" =
+    checkingVal >= HOUSEHOLD.checkingBuffer ? "green" : "red";
 
-  const housingPct = Math.min(100, (housingFund / HOUSEHOLD.housingFundGoal) * 100);
+  const housingPct = Math.min(
+    100,
+    (housingFund / HOUSEHOLD.housingFundGoal) * 100,
+  );
   const housingStatus: "green" | "yellow" | "red" =
     housingFund >= HOUSEHOLD.housingFundGoal
       ? "green"
       : housingFund >= HOUSEHOLD.housingFundGoal * 0.5
-      ? "yellow"
-      : "red";
+        ? "yellow"
+        : "red";
 
   const grocerySpentVal = grocerySpent ?? 0;
   const groceryTarget = currentWeek.groceryTarget;
   const groceryPct =
-    groceryTarget > 0 ? Math.min(100, (grocerySpentVal / groceryTarget) * 100) : 0;
+    groceryTarget > 0
+      ? Math.min(100, (grocerySpentVal / groceryTarget) * 100)
+      : 0;
 
   // Bills due this week
   const billTasks = currentWeek.tasks.filter((t) => t.amount !== undefined);
@@ -95,7 +113,9 @@ export function DashboardTab() {
       }
     }
   }
-  const doneCount = currentWeek.tasks.filter((t) => weekStateMap.get(t.id) === true).length;
+  const doneCount = currentWeek.tasks.filter(
+    (t) => weekStateMap.get(t.id) === true,
+  ).length;
   const totalCount = currentWeek.tasks.length;
 
   return (
@@ -106,7 +126,9 @@ export function DashboardTab() {
           Hi Christopher & Tamara 👋
         </h2>
         <p className="text-muted-foreground mt-1 font-body text-sm">
-          <span className="font-semibold text-foreground">{currentWeek.label}</span>{" "}
+          <span className="font-semibold text-foreground">
+            {currentWeek.label}
+          </span>{" "}
           · {currentWeek.dateRange}
           {totalCount > 0 && (
             <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">
@@ -128,8 +150,8 @@ export function DashboardTab() {
                   savingsStatus === "green"
                     ? "bg-success/10"
                     : savingsStatus === "yellow"
-                    ? "bg-warning-bg"
-                    : "bg-danger-bg",
+                      ? "bg-warning-bg"
+                      : "bg-danger-bg",
                 )}
               >
                 <PiggyBank
@@ -138,8 +160,8 @@ export function DashboardTab() {
                     savingsStatus === "green"
                       ? "text-success"
                       : savingsStatus === "yellow"
-                      ? "text-warning"
-                      : "text-danger",
+                        ? "text-warning"
+                        : "text-danger",
                   )}
                 />
               </div>
@@ -151,15 +173,19 @@ export function DashboardTab() {
               <Skeleton className="h-9 w-32" />
             ) : (
               <>
-                <p className="text-2xl font-bold font-display">${fmt(savingsVal)}</p>
+                <p className="text-2xl font-bold font-display">
+                  ${fmt(savingsVal)}
+                </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Floor: $7,500</span>
+                  <span className="text-xs text-muted-foreground">
+                    Floor: $7,500
+                  </span>
                   <StatusBadge status={savingsStatus}>
                     {savingsStatus === "green"
                       ? "Safe"
                       : savingsStatus === "yellow"
-                      ? "At floor"
-                      : "Warning!"}
+                        ? "At floor"
+                        : "Warning!"}
                   </StatusBadge>
                 </div>
               </>
@@ -171,8 +197,18 @@ export function DashboardTab() {
         <Card className="card-shadow border-border">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm font-display font-semibold">
-              <div className={cn("p-1.5 rounded-lg", housingStatus === "green" ? "bg-success/10" : "bg-primary/10")}>
-                <Home className={cn("h-4 w-4", housingStatus === "green" ? "text-success" : "text-primary")} />
+              <div
+                className={cn(
+                  "p-1.5 rounded-lg",
+                  housingStatus === "green" ? "bg-success/10" : "bg-primary/10",
+                )}
+              >
+                <Home
+                  className={cn(
+                    "h-4 w-4",
+                    housingStatus === "green" ? "text-success" : "text-primary",
+                  )}
+                />
               </div>
               Housing Fund
             </CardTitle>
@@ -182,10 +218,14 @@ export function DashboardTab() {
               <Skeleton className="h-9 w-32" />
             ) : (
               <>
-                <p className="text-2xl font-bold font-display">${fmt(housingFund)}</p>
+                <p className="text-2xl font-bold font-display">
+                  ${fmt(housingFund)}
+                </p>
                 <Progress value={housingPct} className="h-2" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Goal: $7,000</span>
+                  <span className="text-xs text-muted-foreground">
+                    Goal: $7,000
+                  </span>
                   <span className="text-xs font-semibold text-primary">
                     {housingPct.toFixed(0)}%
                   </span>
@@ -220,9 +260,13 @@ export function DashboardTab() {
               <Skeleton className="h-9 w-32" />
             ) : (
               <>
-                <p className="text-2xl font-bold font-display">${fmt(checkingVal)}</p>
+                <p className="text-2xl font-bold font-display">
+                  ${fmt(checkingVal)}
+                </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Min: $100</span>
+                  <span className="text-xs text-muted-foreground">
+                    Min: $100
+                  </span>
                   <StatusBadge status={checkingStatus}>
                     {checkingStatus === "green" ? "Buffer OK" : "Below min!"}
                   </StatusBadge>
@@ -251,15 +295,28 @@ export function DashboardTab() {
               </p>
             ) : (
               <>
-                <p className="text-2xl font-bold font-display">${fmt(grocerySpentVal)}</p>
+                <p className="text-2xl font-bold font-display">
+                  ${fmt(grocerySpentVal)}
+                </p>
                 <Progress
                   value={groceryPct}
-                  className={cn("h-2", groceryPct > 100 ? "[&>div]:bg-danger" : "")}
+                  className={cn(
+                    "h-2",
+                    groceryPct > 100 ? "[&>div]:bg-danger" : "",
+                  )}
                 />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Target: ${fmt(groceryTarget)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Target: ${fmt(groceryTarget)}
+                  </span>
                   <StatusBadge
-                    status={groceryPct > 100 ? "red" : groceryPct > 88 ? "yellow" : "green"}
+                    status={
+                      groceryPct > 100
+                        ? "red"
+                        : groceryPct > 88
+                          ? "yellow"
+                          : "green"
+                    }
                   >
                     {groceryPct > 100
                       ? "Over budget"
@@ -288,8 +345,8 @@ export function DashboardTab() {
                   ? f === "Christopher"
                     ? "bg-blue-500 text-white border-blue-500"
                     : f === "Tamara"
-                    ? "bg-rose-500 text-white border-rose-500"
-                    : "bg-primary text-primary-foreground border-primary"
+                      ? "bg-rose-500 text-white border-rose-500"
+                      : "bg-primary text-primary-foreground border-primary"
                   : "bg-transparent text-muted-foreground border-border hover:text-foreground",
               )}
             >
@@ -389,7 +446,12 @@ export function DashboardTab() {
                     ) : (
                       <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0" />
                     )}
-                    <span className={cn("text-foreground/80", done && "line-through")}>
+                    <span
+                      className={cn(
+                        "text-foreground/80",
+                        done && "line-through",
+                      )}
+                    >
                       {task.label}
                       {task.deadline && (
                         <span className="ml-1 text-xs text-warning font-semibold">
@@ -398,7 +460,12 @@ export function DashboardTab() {
                       )}
                     </span>
                   </div>
-                  <span className={cn("font-bold font-display shrink-0", done && "text-muted-foreground line-through")}>
+                  <span
+                    className={cn(
+                      "font-bold font-display shrink-0",
+                      done && "text-muted-foreground line-through",
+                    )}
+                  >
                     ${fmt(task.amount!)}
                   </span>
                 </div>

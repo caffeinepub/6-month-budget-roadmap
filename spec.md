@@ -1,51 +1,41 @@
 # 6-Month Budget Roadmap
 
 ## Current State
-
-The app has:
-- Dashboard, Month 1 roadmap, Months 2-6 plan, Savings/Housing tab, Rules tab, Income tab, Receipts tab, Weekly Summary tab
-- Backend stores income entries (id, amount, date, category, note, user) and receipt entries (id, amount, date, mainCategory, subCategory, note, user)
-- Shared user toggle (Christopher / Tamara) in the header
-- Financial overview: savingsAmount, housingFund, checkingBalance as flat scalars in the backend
-- Income entries and receipt entries do NOT currently reference which bank/credit account the money goes into or out of
+- Full backend exists with `addReceiptEntry`, `getAllReceiptEntries`, `updateReceiptCategory`, `getAllAccounts`, etc.
+- ReceiptsTab has "Upload Receipt", "Take Photo", and "Add Manually" buttons.
+- Upload/camera capture an image and open a form dialog -- but the form is always blank; no extraction is attempted.
+- The form already has all fields: amount, date, mainCategory, subCategory, fromAccount, note.
+- Backend deducts from account and saves to history when `addReceiptEntry` is called.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Account management: users can create, edit, and delete named accounts (e.g. "Fairwinds Checking," "McCoy Checking," "Emergency Savings," credit cards)
-- Each account has: id, name, type (Checking / Savings / Credit Card / Other), balance (Float)
-- New "Accounts" tab in the app displaying all accounts with their balances, plus buttons to add/edit/delete
-- When adding income: a required "To Account" dropdown lists all accounts; selected account balance is increased by the income amount
-- When adding a receipt/expense: a required "From Account" dropdown lists all accounts; selected account balance is decreased by the expense amount
-- Income and receipt entries store the accountId of the linked account
-- Backend: addAccount, updateAccount, deleteAccount, getAllAccounts, getAccount
-- Backend: addIncomeEntry and addReceiptEntry accept an accountId param and auto-update that account's balance
-- Frontend: AccountsTab component for CRUD management of accounts
-- Frontend: account selector dropdown wired into IncomeTab (Add Income dialog) and ReceiptsTab (Add Receipt form dialog)
+- Client-side OCR using Tesseract.js to extract amount and date from uploaded/photographed receipt images.
+- Auto-categorization logic: keyword matching on OCR text to guess Bills or Household Goods and the matching subcategory (Groceries, Gas, Utilities, etc.).
+- An "Extracting..." loading state shown while OCR runs so the user knows something is happening.
+- Pre-fill the ReceiptFormDialog with extracted amount, date, mainCategory, and subCategory -- all fields remain editable.
 
 ### Modify
-- addIncomeEntry backend function: add accountId parameter, increase account balance by amount
-- addReceiptEntry backend function: add accountId parameter, decrease account balance by amount
-- IncomeTab: add "To Account" select field in the Add Income dialog
-- ReceiptsTab: add "From Account" select field in the Receipt Form dialog
-- App.tsx: add Accounts tab (9th tab)
-- useQueries.ts: add account query hooks; update addIncomeEntry and addReceiptEntry hooks to accept accountId
-- backend.d.ts: updated types for accounts and updated income/receipt entry signatures
+- `handleFileChange` and `handleCameraCapture` in ReceiptsTab: after receiving the image file, run Tesseract OCR, extract amount/date, auto-categorize, then open the form pre-filled.
+- `ReceiptFormDialog`: accept optional `initialValues` prop so it can be pre-filled when opened from an image source.
+- Show a visual "Reading receipt..." spinner overlay while OCR is running, between image capture and form open.
 
 ### Remove
-- Nothing removed
+- Nothing removed. No changes to backend, other tabs, roadmap, checklists, accounts tab, dashboard, or any other component.
 
 ## Implementation Plan
-1. Generate updated Motoko backend with Account type and updated Income/Receipt entry functions
-2. Add account query hooks and updated income/receipt hooks to useQueries.ts
-3. Create AccountsTab.tsx with add/edit/delete account UI
-4. Update IncomeTab.tsx Add Income dialog with "To Account" selector
-5. Update ReceiptsTab.tsx form dialog with "From Account" selector
-6. Add AccountsTab to App.tsx (9th tab)
-
-## UX Notes
-- Account selector is required when adding income or expense; show validation error if not selected
-- Accounts tab shows balance for each account, clearly labeled by type
-- When deleting an account, confirm before deleting
-- Default accounts tab is empty with a prompt to create the first account
-- Account type options: Checking, Savings, Credit Card, Other
+1. Install `tesseract.js` via pnpm in the frontend package.
+2. Create a `src/utils/receiptOcr.ts` utility that:
+   - Accepts a File or Blob
+   - Runs Tesseract OCR (English)
+   - Parses the resulting text for dollar amounts (regex: `\$\d+\.?\d*` or `\d+\.\d{2}`) -- picks the largest value as the receipt total
+   - Parses dates in common formats (MM/DD/YYYY, YYYY-MM-DD, Mon DD YYYY)
+   - Applies keyword-to-category mapping (e.g. "grocery", "walmart", "kroger" → Groceries; "shell", "chevron", "gas" → Gas; "at&t", "spectrum", "verizon" → Utilities; "insurance" → Auto Insurance; etc.)
+   - Returns `{ amount: number | null, date: string | null, mainCategory, subCategory }`
+3. In `ReceiptsTab`, add an `isExtracting` boolean state. When a file is received:
+   - Set `isExtracting = true`, show overlay on the action button area
+   - Call `extractReceiptData(file)`
+   - Set `isExtracting = false`, populate `initialValues`, open form dialog
+4. Update `ReceiptFormDialog` to accept and apply `initialValues` on open (useEffect on open change).
+5. Validate that the form still works for "Add Manually" (no image, no pre-fill).
+6. Run typecheck and build to confirm no errors.

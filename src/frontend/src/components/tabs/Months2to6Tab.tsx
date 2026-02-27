@@ -1,20 +1,23 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { MONTHS, type MonthId, type MonthlyTask } from "@/data/householdData";
 import {
+  useAllChecklistStates,
+  useToggleChecklistItem,
+} from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
+  Check,
   ChevronDown,
   ChevronRight,
   Loader2,
-  Check,
   Wrench,
   Zap,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { MONTHS, type MonthId, type MonthlyTask } from "@/data/householdData";
-import { useAllChecklistStates, useToggleChecklistItem } from "@/hooks/useQueries";
+import { useState } from "react";
 
 interface MonthlyItemRowProps {
   task: MonthlyTask;
@@ -23,7 +26,12 @@ interface MonthlyItemRowProps {
   onToggle: () => void;
 }
 
-function MonthlyItemRow({ task, checked, isToggling, onToggle }: MonthlyItemRowProps) {
+function MonthlyItemRow({
+  task,
+  checked,
+  isToggling,
+  onToggle,
+}: MonthlyItemRowProps) {
   return (
     <div
       className={cn(
@@ -53,7 +61,12 @@ function MonthlyItemRow({ task, checked, isToggling, onToggle }: MonthlyItemRowP
       </div>
       <div className="flex items-center gap-1 shrink-0">
         {task.amount && (
-          <span className={cn("text-xs font-semibold text-muted-foreground", checked && "line-through")}>
+          <span
+            className={cn(
+              "text-xs font-semibold text-muted-foreground",
+              checked && "line-through",
+            )}
+          >
             {task.amount}
           </span>
         )}
@@ -75,7 +88,12 @@ interface MonthCardProps {
   togglingId: string | null;
 }
 
-function MonthCard({ monthId, statesMap, onToggle, togglingId }: MonthCardProps) {
+function MonthCard({
+  monthId,
+  statesMap,
+  onToggle,
+  togglingId,
+}: MonthCardProps) {
   const [open, setOpen] = useState(monthId === "month2");
   const month = MONTHS.find((m) => m.id === monthId)!;
   const isMayMilestone = month.milestone != null;
@@ -135,7 +153,9 @@ function MonthCard({ monthId, statesMap, onToggle, togglingId }: MonthCardProps)
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{month.dateRange}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {month.dateRange}
+                </p>
               </div>
             </div>
             <span className="text-xs font-semibold font-display text-muted-foreground shrink-0">
@@ -207,7 +227,8 @@ export function Months2to6Tab() {
             May 28 — HVAC Income Begins
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 font-body">
-            Christopher's HVAC work adds new income. Use it intentionally: rebuild savings, pay down credit cards, grow the housing fund.
+            Christopher's HVAC work adds new income. Use it intentionally:
+            rebuild savings, pay down credit cards, grow the housing fund.
           </p>
         </div>
       </div>

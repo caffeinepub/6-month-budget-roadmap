@@ -1,35 +1,38 @@
-import { useState } from "react";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  PiggyBank,
-  Home,
-  Wallet,
-  Loader2,
-  Check,
-  AlertTriangle,
-  CheckCircle2,
-  Shield,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { StatusBadge } from "@/components/StatusBadge";
 import { HOUSEHOLD } from "@/data/householdData";
 import {
-  useSavingsAmount,
-  useUpdateSavingsAmount,
-  useHousingFund,
-  useUpdateHousingFund,
   useCheckingBalance,
+  useHousingFund,
+  useSavingsAmount,
   useUpdateCheckingBalance,
+  useUpdateHousingFund,
+  useUpdateSavingsAmount,
 } from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Home,
+  Loader2,
+  PiggyBank,
+  Shield,
+  Wallet,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 export function SavingsHousingTab() {
@@ -53,14 +56,17 @@ export function SavingsHousingTab() {
   const savingsAboveFloor = savingsVal - savingsFloor;
   const savingsBarPct =
     savingsMax > savingsFloor
-      ? Math.min(100, Math.max(0, (savingsAboveFloor / (savingsMax - savingsFloor)) * 100))
+      ? Math.min(
+          100,
+          Math.max(0, (savingsAboveFloor / (savingsMax - savingsFloor)) * 100),
+        )
       : 0;
   const savingsStatus: "green" | "yellow" | "red" =
     savingsVal >= savingsFloor + 500
       ? "green"
       : savingsVal >= savingsFloor
-      ? "yellow"
-      : "red";
+        ? "yellow"
+        : "red";
 
   // ── Housing Fund ──
   const housingVal = housing ?? 0;
@@ -72,27 +78,28 @@ export function SavingsHousingTab() {
 
   // ── Checking ──
   const checkingVal = checking ?? 0;
-  const checkingStatus: "green" | "red" = checkingVal >= HOUSEHOLD.checkingBuffer ? "green" : "red";
+  const checkingStatus: "green" | "red" =
+    checkingVal >= HOUSEHOLD.checkingBuffer ? "green" : "red";
 
   async function handleSavingsSave() {
-    const parsed = parseFloat(savingsInput);
-    if (isNaN(parsed) || parsed < 0) return;
+    const parsed = Number.parseFloat(savingsInput);
+    if (Number.isNaN(parsed) || parsed < 0) return;
     await updateSavings.mutateAsync(parsed);
     setSavingsInput("");
     toast.success("Savings updated");
   }
 
   async function handleHousingSave() {
-    const parsed = parseFloat(housingInput);
-    if (isNaN(parsed) || parsed < 0) return;
+    const parsed = Number.parseFloat(housingInput);
+    if (Number.isNaN(parsed) || parsed < 0) return;
     await updateHousing.mutateAsync(parsed);
     setHousingInput("");
     toast.success("Housing fund updated");
   }
 
   async function handleCheckingSave() {
-    const parsed = parseFloat(checkingInput);
-    if (isNaN(parsed) || parsed < 0) return;
+    const parsed = Number.parseFloat(checkingInput);
+    if (Number.isNaN(parsed) || parsed < 0) return;
     await updateChecking.mutateAsync(parsed);
     setCheckingInput("");
     toast.success("Checking balance updated");
@@ -119,8 +126,8 @@ export function SavingsHousingTab() {
                 savingsStatus === "green"
                   ? "bg-success/10"
                   : savingsStatus === "yellow"
-                  ? "bg-warning-bg"
-                  : "bg-danger-bg",
+                    ? "bg-warning-bg"
+                    : "bg-danger-bg",
               )}
             >
               <PiggyBank
@@ -129,8 +136,8 @@ export function SavingsHousingTab() {
                   savingsStatus === "green"
                     ? "text-success"
                     : savingsStatus === "yellow"
-                    ? "text-warning"
-                    : "text-danger",
+                      ? "text-warning"
+                      : "text-danger",
                 )}
               />
             </div>
@@ -147,15 +154,19 @@ export function SavingsHousingTab() {
             <>
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">Current savings</p>
-                  <p className="text-3xl font-bold font-display">${fmt(savingsVal)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Current savings
+                  </p>
+                  <p className="text-3xl font-bold font-display">
+                    ${fmt(savingsVal)}
+                  </p>
                 </div>
                 <StatusBadge status={savingsStatus}>
                   {savingsStatus === "green"
                     ? "Safe"
                     : savingsStatus === "yellow"
-                    ? "At floor"
-                    : "Warning!"}
+                      ? "At floor"
+                      : "Warning!"}
                 </StatusBadge>
               </div>
 
@@ -168,8 +179,8 @@ export function SavingsHousingTab() {
                     savingsStatus === "green"
                       ? "[&>div]:bg-success"
                       : savingsStatus === "yellow"
-                      ? "[&>div]:bg-warning"
-                      : "[&>div]:bg-danger",
+                        ? "[&>div]:bg-warning"
+                        : "[&>div]:bg-danger",
                   )}
                 />
                 <div className="flex justify-between text-xs">
@@ -177,7 +188,9 @@ export function SavingsHousingTab() {
                     <Shield className="h-3 w-3 text-muted-foreground" />
                     Floor: ${fmt(savingsFloor)}
                   </span>
-                  <span className="text-muted-foreground">${fmt(savingsMax)}</span>
+                  <span className="text-muted-foreground">
+                    ${fmt(savingsMax)}
+                  </span>
                 </div>
                 {savingsVal >= savingsFloor ? (
                   <p className="text-sm text-success font-semibold">
@@ -185,8 +198,8 @@ export function SavingsHousingTab() {
                   </p>
                 ) : (
                   <p className="text-sm text-danger font-semibold flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4" />
-                    ${fmt(savingsFloor - savingsVal)} below floor — act now
+                    <AlertTriangle className="h-4 w-4" />$
+                    {fmt(savingsFloor - savingsVal)} below floor — act now
                   </p>
                 )}
               </div>
@@ -245,12 +258,18 @@ export function SavingsHousingTab() {
             <>
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">Current housing fund</p>
-                  <p className="text-3xl font-bold font-display">${fmt(housingVal)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Current housing fund
+                  </p>
+                  <p className="text-3xl font-bold font-display">
+                    ${fmt(housingVal)}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Goal</p>
-                  <p className="text-sm font-bold font-display text-primary">${fmt(housingGoal)}</p>
+                  <p className="text-sm font-bold font-display text-primary">
+                    ${fmt(housingGoal)}
+                  </p>
                 </div>
               </div>
 
@@ -272,7 +291,8 @@ export function SavingsHousingTab() {
                   <span>${fmt(housingMax)}</span>
                 </div>
                 <p className="text-sm font-semibold text-primary">
-                  {housingPct.toFixed(0)}% of goal · ${fmt(Math.max(0, housingGoal - housingVal))} to go
+                  {housingPct.toFixed(0)}% of goal · $
+                  {fmt(Math.max(0, housingGoal - housingVal))} to go
                 </p>
               </div>
             </>
@@ -335,7 +355,9 @@ export function SavingsHousingTab() {
             <Skeleton className="h-10 w-40" />
           ) : (
             <div className="flex items-center justify-between gap-2">
-              <p className="text-3xl font-bold font-display">${fmt(checkingVal)}</p>
+              <p className="text-3xl font-bold font-display">
+                ${fmt(checkingVal)}
+              </p>
               <div className="flex items-center gap-2">
                 {checkingStatus === "green" ? (
                   <CheckCircle2 className="h-5 w-5 text-success" />

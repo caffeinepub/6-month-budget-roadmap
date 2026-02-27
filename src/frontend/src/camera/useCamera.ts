@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CameraConfig {
   facingMode?: "user" | "environment";
@@ -35,9 +35,7 @@ export const useCamera = (config: CameraConfig = {}) => {
 
   // Check browser support
   useEffect(() => {
-    const supported = !!(
-      navigator.mediaDevices && navigator.mediaDevices.getUserMedia
-    );
+    const supported = !!navigator.mediaDevices?.getUserMedia;
     setIsSupported(supported);
   }, []);
 
@@ -51,7 +49,9 @@ export const useCamera = (config: CameraConfig = {}) => {
 
   const cleanup = useCallback(() => {
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
+      for (const track of streamRef.current.getTracks()) {
+        track.stop();
+      }
       streamRef.current = null;
     }
 
@@ -76,7 +76,9 @@ export const useCamera = (config: CameraConfig = {}) => {
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
         if (!isMountedRef.current) {
-          stream.getTracks().forEach((track) => track.stop());
+          for (const track of stream.getTracks()) {
+            track.stop();
+          }
           return null;
         }
 
@@ -159,14 +161,15 @@ export const useCamera = (config: CameraConfig = {}) => {
       if (success && isMountedRef.current) {
         setIsActive(true);
         return true;
-      } else {
-        cleanup();
-        return false;
       }
+
+      cleanup();
+      return false;
     } catch (err: any) {
       if (isMountedRef.current) {
         setError(err);
       }
+
       cleanup();
       return false;
     } finally {
@@ -178,6 +181,7 @@ export const useCamera = (config: CameraConfig = {}) => {
     isSupported,
     isLoading,
     currentFacingMode,
+    cleanup,
     createMediaStream,
     setupVideo,
   ]);
@@ -229,14 +233,15 @@ export const useCamera = (config: CameraConfig = {}) => {
         if (success && isMountedRef.current) {
           setIsActive(true);
           return true;
-        } else {
-          cleanup();
-          return false;
         }
+
+        cleanup();
+        return false;
       } catch (err: any) {
         if (isMountedRef.current) {
           setError(err);
         }
+
         cleanup();
         return false;
       } finally {

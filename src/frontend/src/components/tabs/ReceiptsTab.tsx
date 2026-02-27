@@ -1,16 +1,16 @@
-import { useState, useRef, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCamera } from "@/camera/useCamera";
+import { UserBadge } from "@/components/UserBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,34 +18,38 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useActiveUser } from "@/hooks/useActiveUser";
 import {
-  ScanLine,
-  Camera,
-  Upload,
-  Plus,
-  Trash2,
-  Loader2,
-  ShoppingBag,
-  Receipt,
-  Pencil,
-  Check,
-  X,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { useCamera } from "@/camera/useCamera";
-import {
-  useAllReceiptEntries,
   useAddReceiptEntry,
+  useAllAccounts,
+  useAllReceiptEntries,
   useDeleteReceiptEntry,
   useUpdateReceiptCategory,
-  useAllAccounts,
 } from "@/hooks/useQueries";
-import { useActiveUser } from "@/hooks/useActiveUser";
-import { UserBadge } from "@/components/UserBadge";
+import { cn } from "@/lib/utils";
+import { extractReceiptData } from "@/utils/receiptOcr";
+import {
+  Camera,
+  Check,
+  Loader2,
+  Pencil,
+  Plus,
+  Receipt,
+  ScanLine,
+  ShoppingBag,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function todayStr() {
@@ -77,7 +81,13 @@ type MainCategory = (typeof MAIN_CATEGORIES)[number];
 
 const SUB_CATEGORIES: Record<MainCategory, string[]> = {
   Bills: ["Credit Card", "Auto Insurance", "Utilities", "Loans", "Other"],
-  "Household Goods": ["Groceries", "Clothing", "Healthcare Goods", "Gas", "Fast Food"],
+  "Household Goods": [
+    "Groceries",
+    "Clothing",
+    "Healthcare Goods",
+    "Gas",
+    "Fast Food",
+  ],
 };
 
 function defaultSubCategory(main: MainCategory) {
@@ -87,7 +97,11 @@ function defaultSubCategory(main: MainCategory) {
 function formatDisplayDate(dateStr: string) {
   const [year, month, day] = dateStr.split("-").map(Number);
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function MainCategoryBadge({ main, sub }: { main: string; sub: string }) {
@@ -99,7 +113,11 @@ function MainCategoryBadge({ main, sub }: { main: string; sub: string }) {
         isBills ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700",
       )}
     >
-      {isBills ? <Receipt className="h-3 w-3" /> : <ShoppingBag className="h-3 w-3" />}
+      {isBills ? (
+        <Receipt className="h-3 w-3" />
+      ) : (
+        <ShoppingBag className="h-3 w-3" />
+      )}
       {sub}
     </span>
   );
@@ -184,7 +202,9 @@ function CameraDialog({ open, onClose, onCapture }: CameraDialogProps) {
           {camera.error && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 p-4 text-center gap-3">
               <Camera className="h-10 w-10 text-white/40" />
-              <p className="text-white/80 text-sm font-body">{camera.error.message}</p>
+              <p className="text-white/80 text-sm font-body">
+                {camera.error.message}
+              </p>
               <Button
                 size="sm"
                 variant="outline"
@@ -227,17 +247,46 @@ function CameraDialog({ open, onClose, onCapture }: CameraDialogProps) {
 
 // ── Receipt Form Dialog ────────────────────────────────────────────────────────
 
+interface ExtractedValues {
+  amount: string;
+  date: string;
+  mainCategory: MainCategory;
+  subCategory: string;
+}
+
 interface ReceiptFormDialogProps {
   open: boolean;
   onClose: () => void;
   imagePreviewUrl: string | null;
   activeUser: string;
+  initialValues?: ExtractedValues | null;
 }
 
-function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: ReceiptFormDialogProps) {
+function ReceiptFormDialog({
+  open,
+  onClose,
+  imagePreviewUrl,
+  activeUser,
+  initialValues,
+}: ReceiptFormDialogProps) {
   const addReceipt = useAddReceiptEntry();
   const { data: accounts } = useAllAccounts();
   const [form, setForm] = useState<ReceiptFormState>(defaultForm);
+
+  // Pre-fill form when dialog opens with extracted values
+  useEffect(() => {
+    if (open && initialValues) {
+      setForm((f) => ({
+        ...f,
+        amount: initialValues.amount,
+        date: initialValues.date,
+        mainCategory: initialValues.mainCategory,
+        subCategory: initialValues.subCategory,
+      }));
+    } else if (!open) {
+      setForm(defaultForm());
+    }
+  }, [open, initialValues]);
 
   function updateMain(val: string) {
     const main = val as MainCategory;
@@ -254,8 +303,8 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
   }
 
   async function handleSubmit() {
-    const amount = parseFloat(form.amount);
-    if (isNaN(amount) || amount <= 0) {
+    const amount = Number.parseFloat(form.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount.");
       return;
     }
@@ -291,14 +340,16 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
         <DialogHeader>
           <DialogTitle className="font-display font-bold flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
-            {imagePreviewUrl ? "Save Receipt" : "Add Receipt Manually"}
+            {imagePreviewUrl ? "Receipt from Photo" : "Add Receipt Manually"}
           </DialogTitle>
           <p className="text-xs text-muted-foreground font-body pt-0.5">
             Adding as{" "}
             <span
               className={cn(
                 "font-semibold",
-                activeUser === "Christopher" ? "text-blue-600" : "text-rose-600",
+                activeUser === "Christopher"
+                  ? "text-blue-600"
+                  : "text-rose-600",
               )}
             >
               {activeUser}
@@ -320,7 +371,10 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
 
           {/* Amount */}
           <div className="space-y-1.5">
-            <Label htmlFor="receipt-amount" className="font-semibold text-sm font-body">
+            <Label
+              htmlFor="receipt-amount"
+              className="font-semibold text-sm font-body"
+            >
               Amount <span className="text-danger">*</span>
             </Label>
             <div className="relative">
@@ -334,7 +388,9 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
                 step="0.01"
                 placeholder="0.00"
                 value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, amount: e.target.value }))
+                }
                 className="pl-7"
                 autoFocus
               />
@@ -343,7 +399,10 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
 
           {/* Date */}
           <div className="space-y-1.5">
-            <Label htmlFor="receipt-date" className="font-semibold text-sm font-body">
+            <Label
+              htmlFor="receipt-date"
+              className="font-semibold text-sm font-body"
+            >
               Date <span className="text-danger">*</span>
             </Label>
             <Input
@@ -380,7 +439,9 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
             </Label>
             <Select
               value={form.subCategory}
-              onValueChange={(val) => setForm((f) => ({ ...f, subCategory: val }))}
+              onValueChange={(val) =>
+                setForm((f) => ({ ...f, subCategory: val }))
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -410,7 +471,9 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
             ) : (
               <Select
                 value={form.accountId}
-                onValueChange={(val) => setForm((f) => ({ ...f, accountId: val }))}
+                onValueChange={(val) =>
+                  setForm((f) => ({ ...f, accountId: val }))
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select an account" />
@@ -428,9 +491,14 @@ function ReceiptFormDialog({ open, onClose, imagePreviewUrl, activeUser }: Recei
 
           {/* Note */}
           <div className="space-y-1.5">
-            <Label htmlFor="receipt-note" className="font-semibold text-sm font-body">
+            <Label
+              htmlFor="receipt-note"
+              className="font-semibold text-sm font-body"
+            >
               Note{" "}
-              <span className="text-muted-foreground font-normal">(optional)</span>
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
             </Label>
             <Input
               id="receipt-note"
@@ -478,7 +546,12 @@ interface EditCategoryInlineProps {
   onDone: () => void;
 }
 
-function EditCategoryInline({ id, currentMain, currentSub, onDone }: EditCategoryInlineProps) {
+function EditCategoryInline({
+  id,
+  currentMain,
+  currentSub,
+  onDone,
+}: EditCategoryInlineProps) {
   const updateCategory = useUpdateReceiptCategory();
   const [main, setMain] = useState<MainCategory>(currentMain as MainCategory);
   const [sub, setSub] = useState(currentSub);
@@ -491,7 +564,11 @@ function EditCategoryInline({ id, currentMain, currentSub, onDone }: EditCategor
 
   async function handleSave() {
     try {
-      await updateCategory.mutateAsync({ id, mainCategory: main, subCategory: sub });
+      await updateCategory.mutateAsync({
+        id,
+        mainCategory: main,
+        subCategory: sub,
+      });
       toast.success("Category updated.");
       onDone();
     } catch {
@@ -568,6 +645,9 @@ export function ReceiptsTab() {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedValues, setExtractedValues] =
+    useState<ExtractedValues | null>(null);
 
   const allEntries = entries ?? [];
 
@@ -600,29 +680,47 @@ export function ReceiptsTab() {
     fileInputRef.current?.click();
   }
 
+  async function processImageFile(file: File) {
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+    setIsExtracting(true);
+    try {
+      const result = await extractReceiptData(file);
+      setExtractedValues({
+        amount: result.amount != null ? result.amount.toFixed(2) : "",
+        date: result.date ?? todayStr(),
+        mainCategory: result.mainCategory as MainCategory,
+        subCategory: result.subCategory,
+      });
+    } catch {
+      setExtractedValues(null);
+    } finally {
+      setIsExtracting(false);
+      setFormOpen(true);
+    }
+  }
+
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setImagePreviewUrl(url);
-    setFormOpen(true);
     // Reset file input so same file can be re-selected
     e.target.value = "";
+    processImageFile(file);
   }
 
   function handleCameraCapture(file: File) {
-    const url = URL.createObjectURL(file);
-    setImagePreviewUrl(url);
-    setFormOpen(true);
+    processImageFile(file);
   }
 
   function handleAddManually() {
     setImagePreviewUrl(null);
+    setExtractedValues(null);
     setFormOpen(true);
   }
 
   function handleFormClose() {
     setFormOpen(false);
+    setExtractedValues(null);
     if (imagePreviewUrl) {
       URL.revokeObjectURL(imagePreviewUrl);
       setImagePreviewUrl(null);
@@ -645,19 +743,22 @@ export function ReceiptsTab() {
     <div className="space-y-6">
       {/* Header + Action buttons */}
       <div className="px-1">
-        <h2 className="text-xl font-bold font-display text-foreground">Receipts</h2>
+        <h2 className="text-xl font-bold font-display text-foreground">
+          Receipts
+        </h2>
         <p className="text-sm text-muted-foreground mt-0.5 font-body">
           Track bills and household spending with photos or manual entry
         </p>
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         <Button
           variant="outline"
           size="sm"
           className="gap-1.5 font-display font-semibold"
           onClick={handleUploadClick}
+          disabled={isExtracting}
         >
           <Upload className="h-4 w-4" />
           Upload Receipt
@@ -667,6 +768,7 @@ export function ReceiptsTab() {
           size="sm"
           className="gap-1.5 font-display font-semibold"
           onClick={() => setCameraOpen(true)}
+          disabled={isExtracting}
         >
           <Camera className="h-4 w-4" />
           Take Photo
@@ -675,6 +777,7 @@ export function ReceiptsTab() {
           size="sm"
           className="gap-1.5 font-display font-semibold"
           onClick={handleAddManually}
+          disabled={isExtracting}
         >
           <Plus className="h-4 w-4" />
           Add Manually
@@ -687,6 +790,13 @@ export function ReceiptsTab() {
           className="hidden"
           onChange={handleFileChange}
         />
+        {/* OCR loading indicator */}
+        {isExtracting && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Reading receipt…
+          </div>
+        )}
       </div>
 
       {/* Summary cards */}
@@ -701,7 +811,9 @@ export function ReceiptsTab() {
             {isLoading ? (
               <Skeleton className="h-7 w-20" />
             ) : (
-              <p className="text-xl font-bold font-display">${fmt(weeklyTotal)}</p>
+              <p className="text-xl font-bold font-display">
+                ${fmt(weeklyTotal)}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -716,7 +828,9 @@ export function ReceiptsTab() {
             {isLoading ? (
               <Skeleton className="h-7 w-20" />
             ) : (
-              <p className="text-xl font-bold font-display">${fmt(monthlyTotal)}</p>
+              <p className="text-xl font-bold font-display">
+                ${fmt(monthlyTotal)}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -797,7 +911,10 @@ export function ReceiptsTab() {
                   <div className="flex items-center justify-between gap-3 px-3 py-3 rounded-xl bg-secondary border border-border/50">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <MainCategoryBadge main={entry.mainCategory} sub={entry.subCategory} />
+                        <MainCategoryBadge
+                          main={entry.mainCategory}
+                          sub={entry.subCategory}
+                        />
                         {entry.user && <UserBadge user={entry.user} />}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -872,6 +989,7 @@ export function ReceiptsTab() {
         onClose={handleFormClose}
         imagePreviewUrl={imagePreviewUrl}
         activeUser={activeUser}
+        initialValues={extractedValues}
       />
     </div>
   );

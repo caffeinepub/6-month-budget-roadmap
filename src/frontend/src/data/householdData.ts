@@ -58,15 +58,20 @@ export const WEEKS: WeekData[] = [
     groceryTarget: 190,
     weekTotal: 3525.26,
     tasks: [
-      { id: "spectrum", label: "Spectrum (Internet)", amount: 452.40 },
+      { id: "spectrum", label: "Spectrum (Internet)", amount: 452.4 },
       { id: "spectrum_mobile", label: "Spectrum Mobile", amount: 185.86 },
-      { id: "cashapp_payment", label: "Cash App", amount: 24.00 },
-      { id: "milestone", label: "Milestone card", amount: 160.00 },
-      { id: "credit_one", label: "Credit One card", amount: 159.00 },
-      { id: "oil_changes", label: "Oil Changes (2 cars)", amount: 120.00 },
-      { id: "groceries_w1", label: "Groceries", amount: 190.00 },
-      { id: "hvac_tools", label: "Tools (HVAC)", amount: 2000.00, deadline: "March 1" },
-      { id: "capital_one", label: "Capital One Platinum", amount: 234.00 },
+      { id: "cashapp_payment", label: "Cash App", amount: 24.0 },
+      { id: "milestone", label: "Milestone card", amount: 160.0 },
+      { id: "credit_one", label: "Credit One card", amount: 159.0 },
+      { id: "oil_changes", label: "Oil Changes (2 cars)", amount: 120.0 },
+      { id: "groceries_w1", label: "Groceries", amount: 190.0 },
+      {
+        id: "hvac_tools",
+        label: "Tools (HVAC)",
+        amount: 2000.0,
+        deadline: "March 1",
+      },
+      { id: "capital_one", label: "Capital One Platinum", amount: 234.0 },
     ],
   },
   {
@@ -76,7 +81,12 @@ export const WEEKS: WeekData[] = [
     groceryTarget: 92,
     tasks: [
       { id: "auto_insurance", label: "Auto Insurance", amount: 242.97 },
-      { id: "groceries_w2", label: "Groceries", note: "$90–95 target", amount: 92 },
+      {
+        id: "groceries_w2",
+        label: "Groceries",
+        note: "$90–95 target",
+        amount: 92,
+      },
     ],
   },
   {
@@ -85,9 +95,14 @@ export const WEEKS: WeekData[] = [
     dateRange: "Mar 13–19, 2026",
     groceryTarget: 92,
     tasks: [
-      { id: "capital_one_w3", label: "Capital One Platinum", amount: 234.00 },
+      { id: "capital_one_w3", label: "Capital One Platinum", amount: 234.0 },
       { id: "spectrum_mobile_w3", label: "Spectrum Mobile", amount: 185.86 },
-      { id: "groceries_w3", label: "Groceries", note: "$90–95 target", amount: 92 },
+      {
+        id: "groceries_w3",
+        label: "Groceries",
+        note: "$90–95 target",
+        amount: 92,
+      },
     ],
   },
   {
@@ -96,7 +111,12 @@ export const WEEKS: WeekData[] = [
     dateRange: "Mar 20–26, 2026",
     groceryTarget: 92,
     tasks: [
-      { id: "groceries_w4", label: "Groceries", note: "$90–95 target", amount: 92 },
+      {
+        id: "groceries_w4",
+        label: "Groceries",
+        note: "$90–95 target",
+        amount: 92,
+      },
       { id: "review_utilities", label: "Review utilities" },
       { id: "maintain_buffer", label: "Maintain buffer ≥ $100" },
     ],
@@ -167,7 +187,8 @@ export const MONTHS: MonthData[] = [
     id: "month3",
     label: "Month 3 — May",
     dateRange: "May 2026",
-    milestone: "May 28 — HVAC income begins! Start rebuilding savings and housing fund.",
+    milestone:
+      "May 28 — HVAC income begins! Start rebuilding savings and housing fund.",
     tasks: RECURRING_MONTHLY_TASKS.map((t) => ({ ...t, id: `m3_${t.id}` })),
   },
   {
@@ -196,8 +217,14 @@ export const RULES = [
   { icon: "shield", text: "No overdrafts" },
   { icon: "x-circle", text: "No new debt" },
   { icon: "wallet", text: "Checking balance must stay ≥ $100" },
-  { icon: "smartphone", text: "Cash App paused until April (capped at $25–$50/week after April)" },
-  { icon: "shopping-bag", text: "Weekly non-essential spending limit: $30–$50" },
+  {
+    icon: "smartphone",
+    text: "Cash App paused until April (capped at $25–$50/week after April)",
+  },
+  {
+    icon: "shopping-bag",
+    text: "Weekly non-essential spending limit: $30–$50",
+  },
   { icon: "shopping-cart", text: "Weekly groceries: $90–95" },
   { icon: "piggy-bank", text: "Savings must stay above $7,500" },
   { icon: "home", text: "Goal: 4-bedroom home in 6 months (max rent $2,500)" },

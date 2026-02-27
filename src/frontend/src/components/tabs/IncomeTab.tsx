@@ -1,16 +1,15 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserBadge } from "@/components/UserBadge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,29 +17,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useActiveUser } from "@/hooks/useActiveUser";
 import {
-  DollarSign,
-  Plus,
-  Trash2,
-  TrendingUp,
-  Loader2,
+  useAddIncomeEntry,
+  useAllAccounts,
+  useAllIncomeEntries,
+  useDeleteIncomeEntry,
+} from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
   Banknote,
   Briefcase,
   CircleDollarSign,
+  DollarSign,
+  Loader2,
+  Plus,
+  Trash2,
+  TrendingUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  useAllIncomeEntries,
-  useAddIncomeEntry,
-  useDeleteIncomeEntry,
-  useAllAccounts,
-} from "@/hooks/useQueries";
-import { useActiveUser } from "@/hooks/useActiveUser";
-import { UserBadge } from "@/components/UserBadge";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function todayStr() {
@@ -68,7 +71,11 @@ function categoryColor(cat: string): CategoryColor {
 function CategoryBadge({ category }: { category: string }) {
   const color = categoryColor(category);
   const Icon =
-    color === "blue" ? Banknote : color === "green" ? Briefcase : CircleDollarSign;
+    color === "blue"
+      ? Banknote
+      : color === "green"
+        ? Briefcase
+        : CircleDollarSign;
 
   return (
     <span
@@ -89,7 +96,11 @@ function formatDisplayDate(dateStr: string) {
   // dateStr is "YYYY-MM-DD"
   const [year, month, day] = dateStr.split("-").map(Number);
   const d = new Date(year, month - 1, day);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 interface AddIncomeFormState {
@@ -144,8 +155,8 @@ export function IncomeTab() {
   }
 
   async function handleSubmit() {
-    const amount = parseFloat(form.amount);
-    if (isNaN(amount) || amount <= 0) {
+    const amount = Number.parseFloat(form.amount);
+    if (Number.isNaN(amount) || amount <= 0) {
       toast.error("Please enter a valid amount.");
       return;
     }
@@ -232,7 +243,10 @@ export function IncomeTab() {
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-0.5 font-body">
-              {new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+              {new Date().toLocaleString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </p>
           </CardContent>
         </Card>
@@ -355,7 +369,9 @@ export function IncomeTab() {
               <span
                 className={cn(
                   "font-semibold",
-                  activeUser === "Christopher" ? "text-blue-600" : "text-rose-600",
+                  activeUser === "Christopher"
+                    ? "text-blue-600"
+                    : "text-rose-600",
                 )}
               >
                 {activeUser}
@@ -366,7 +382,10 @@ export function IncomeTab() {
           <div className="space-y-4 py-2">
             {/* Amount */}
             <div className="space-y-1.5">
-              <Label htmlFor="income-amount" className="font-semibold text-sm font-body">
+              <Label
+                htmlFor="income-amount"
+                className="font-semibold text-sm font-body"
+              >
                 Amount <span className="text-danger">*</span>
               </Label>
               <div className="relative">
@@ -380,7 +399,9 @@ export function IncomeTab() {
                   step="0.01"
                   placeholder="0.00"
                   value={form.amount}
-                  onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, amount: e.target.value }))
+                  }
                   className="pl-7"
                   autoFocus
                 />
@@ -389,14 +410,19 @@ export function IncomeTab() {
 
             {/* Date */}
             <div className="space-y-1.5">
-              <Label htmlFor="income-date" className="font-semibold text-sm font-body">
+              <Label
+                htmlFor="income-date"
+                className="font-semibold text-sm font-body"
+              >
                 Date <span className="text-danger">*</span>
               </Label>
               <Input
                 id="income-date"
                 type="date"
                 value={form.date}
-                onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, date: e.target.value }))
+                }
               />
             </div>
 
@@ -407,7 +433,9 @@ export function IncomeTab() {
               </Label>
               <Select
                 value={form.category}
-                onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}
+                onValueChange={(val) =>
+                  setForm((f) => ({ ...f, category: val }))
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a category" />
@@ -437,7 +465,9 @@ export function IncomeTab() {
               ) : (
                 <Select
                   value={form.accountId}
-                  onValueChange={(val) => setForm((f) => ({ ...f, accountId: val }))}
+                  onValueChange={(val) =>
+                    setForm((f) => ({ ...f, accountId: val }))
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an account" />
@@ -455,22 +485,33 @@ export function IncomeTab() {
 
             {/* Note (optional) */}
             <div className="space-y-1.5">
-              <Label htmlFor="income-note" className="font-semibold text-sm font-body">
+              <Label
+                htmlFor="income-note"
+                className="font-semibold text-sm font-body"
+              >
                 Note{" "}
-                <span className="text-muted-foreground font-normal">(optional)</span>
+                <span className="text-muted-foreground font-normal">
+                  (optional)
+                </span>
               </Label>
               <Input
                 id="income-note"
                 type="text"
                 placeholder="e.g. February deposit"
                 value={form.note}
-                onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, note: e.target.value }))
+                }
               />
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={closeDialog} className="font-body">
+            <Button
+              variant="outline"
+              onClick={closeDialog}
+              className="font-body"
+            >
               Cancel
             </Button>
             <Button

@@ -1,28 +1,28 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Toaster } from "@/components/ui/sonner";
-import {
-  LayoutDashboard,
-  MapIcon,
-  CalendarRange,
-  PiggyBank,
-  BookOpen,
-  Heart,
-  DollarSign,
-  ScanLine,
-  CalendarCheck,
-  Wallet,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AccountsTab } from "@/components/tabs/AccountsTab";
 import { DashboardTab } from "@/components/tabs/DashboardTab";
+import { IncomeTab } from "@/components/tabs/IncomeTab";
 import { Month1RoadmapTab } from "@/components/tabs/Month1RoadmapTab";
 import { Months2to6Tab } from "@/components/tabs/Months2to6Tab";
-import { SavingsHousingTab } from "@/components/tabs/SavingsHousingTab";
-import { RulesTab } from "@/components/tabs/RulesTab";
-import { IncomeTab } from "@/components/tabs/IncomeTab";
 import { ReceiptsTab } from "@/components/tabs/ReceiptsTab";
+import { RulesTab } from "@/components/tabs/RulesTab";
+import { SavingsHousingTab } from "@/components/tabs/SavingsHousingTab";
 import { WeeklySummaryTab } from "@/components/tabs/WeeklySummaryTab";
-import { AccountsTab } from "@/components/tabs/AccountsTab";
+import { Toaster } from "@/components/ui/sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActiveUser } from "@/hooks/useActiveUser";
+import { cn } from "@/lib/utils";
+import {
+  BookOpen,
+  CalendarCheck,
+  CalendarRange,
+  DollarSign,
+  Heart,
+  LayoutDashboard,
+  MapIcon,
+  PiggyBank,
+  ScanLine,
+  Wallet,
+} from "lucide-react";
 
 export default function App() {
   const { activeUser, setActiveUser } = useActiveUser();
@@ -146,31 +146,58 @@ export default function App() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="dashboard"
+            className="mt-0 focus-visible:outline-none"
+          >
             <DashboardTab />
           </TabsContent>
-          <TabsContent value="month1" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="month1"
+            className="mt-0 focus-visible:outline-none"
+          >
             <Month1RoadmapTab />
           </TabsContent>
-          <TabsContent value="months2to6" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="months2to6"
+            className="mt-0 focus-visible:outline-none"
+          >
             <Months2to6Tab />
           </TabsContent>
-          <TabsContent value="savings" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="savings"
+            className="mt-0 focus-visible:outline-none"
+          >
             <SavingsHousingTab />
           </TabsContent>
-          <TabsContent value="rules" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="rules"
+            className="mt-0 focus-visible:outline-none"
+          >
             <RulesTab />
           </TabsContent>
-          <TabsContent value="income" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="income"
+            className="mt-0 focus-visible:outline-none"
+          >
             <IncomeTab />
           </TabsContent>
-          <TabsContent value="receipts" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="receipts"
+            className="mt-0 focus-visible:outline-none"
+          >
             <ReceiptsTab />
           </TabsContent>
-          <TabsContent value="summary" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="summary"
+            className="mt-0 focus-visible:outline-none"
+          >
             <WeeklySummaryTab />
           </TabsContent>
-          <TabsContent value="accounts" className="mt-0 focus-visible:outline-none">
+          <TabsContent
+            value="accounts"
+            className="mt-0 focus-visible:outline-none"
+          >
             <AccountsTab />
           </TabsContent>
         </Tabs>

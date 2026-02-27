@@ -5,9 +5,9 @@ import Array "mo:core/Array";
 import Float "mo:core/Float";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   type Account = {
     id : Text;

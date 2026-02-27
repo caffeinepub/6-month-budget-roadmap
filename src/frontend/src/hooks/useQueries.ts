@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useActor } from "./useActor";
 
 // ─── Financial Overview (load all at once) ────────────────────────────────────
@@ -171,8 +171,7 @@ export function useToggleChecklistItem() {
       if (!actor) return false;
       return actor.toggleChecklistItem(group, item);
     },
-    onSuccess: () =>
-      qc.invalidateQueries({ queryKey: ["allChecklistStates"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["allChecklistStates"] }),
   });
 }
 
@@ -208,7 +207,14 @@ export function useFinancialSummary() {
 export function useAllIncomeEntries() {
   const { actor, isFetching } = useActor();
   return useQuery<
-    Array<{ id: string; date: string; note?: string; user: string; category: string; amount: number }>
+    Array<{
+      id: string;
+      date: string;
+      note?: string;
+      user: string;
+      category: string;
+      amount: number;
+    }>
   >({
     queryKey: ["allIncomeEntries"],
     queryFn: async () => {
@@ -239,7 +245,14 @@ export function useAddIncomeEntry() {
       accountId: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addIncomeEntry(amount, date, category, note, user, accountId);
+      return actor.addIncomeEntry(
+        amount,
+        date,
+        category,
+        note,
+        user,
+        accountId,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allIncomeEntries"] });
@@ -310,7 +323,15 @@ export function useAddReceiptEntry() {
       accountId: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      return actor.addReceiptEntry(amount, date, mainCategory, subCategory, note, user, accountId);
+      return actor.addReceiptEntry(
+        amount,
+        date,
+        mainCategory,
+        subCategory,
+        note,
+        user,
+        accountId,
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allReceiptEntries"] });
@@ -362,7 +383,9 @@ export function useUpdateReceiptCategory() {
 
 export function useAllAccounts() {
   const { actor, isFetching } = useActor();
-  return useQuery<Array<{ id: string; balance: number; name: string; accountType: string }>>({
+  return useQuery<
+    Array<{ id: string; balance: number; name: string; accountType: string }>
+  >({
     queryKey: ["allAccounts"],
     queryFn: async () => {
       if (!actor) return [];

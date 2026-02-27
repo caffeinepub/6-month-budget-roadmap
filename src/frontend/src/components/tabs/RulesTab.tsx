@@ -1,34 +1,37 @@
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Shield,
-  XCircle,
-  Wallet,
-  Smartphone,
-  ShoppingBag,
-  ShoppingCart,
-  PiggyBank,
-  Home,
-  Target,
-  Loader2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { RULES, HOUSEHOLD, getCurrentWeekId } from "@/data/householdData";
+import { HOUSEHOLD, RULES, getCurrentWeekId } from "@/data/householdData";
 import {
   useGrocerySpending,
-  useUpdateGrocerySpending,
   useNonEssentialSpending,
+  useUpdateGrocerySpending,
   useUpdateNonEssentialSpending,
 } from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
+  Home,
+  Loader2,
+  PiggyBank,
+  Shield,
+  ShoppingBag,
+  ShoppingCart,
+  Smartphone,
+  Target,
+  Wallet,
+  XCircle,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 const RULE_ICONS = [
@@ -55,10 +58,12 @@ export function RulesTab() {
   const currentWeekId = getCurrentWeekId();
   const currentMonthKey = getCurrentMonthKey();
 
-  const { data: weekNonEssential, isLoading: nonEssLoading } = useNonEssentialSpending(currentWeekId);
+  const { data: weekNonEssential, isLoading: nonEssLoading } =
+    useNonEssentialSpending(currentWeekId);
   const updateNonEssential = useUpdateNonEssentialSpending();
 
-  const { data: monthGrocery, isLoading: monthGrocLoading } = useGrocerySpending(currentMonthKey);
+  const { data: monthGrocery, isLoading: monthGrocLoading } =
+    useGrocerySpending(currentMonthKey);
   const updateMonthGrocery = useUpdateGrocerySpending();
 
   const [nonEssInput, setNonEssInput] = useState("");
@@ -68,24 +73,34 @@ export function RulesTab() {
   const nonEssLimit = HOUSEHOLD.weeklyNonEssentialLimit.max;
   const nonEssPct = Math.min(100, (nonEssVal / nonEssLimit) * 100);
   const nonEssStatus: "green" | "yellow" | "red" =
-    nonEssVal > nonEssLimit ? "red" : nonEssVal > nonEssLimit * 0.7 ? "yellow" : "green";
+    nonEssVal > nonEssLimit
+      ? "red"
+      : nonEssVal > nonEssLimit * 0.7
+        ? "yellow"
+        : "green";
 
   const monthGrocVal = monthGrocery ?? 0;
   const monthGrocBudget = HOUSEHOLD.monthlyGroceryBudget;
   const monthGrocPct = Math.min(100, (monthGrocVal / monthGrocBudget) * 100);
 
   async function handleNonEssSave() {
-    const parsed = parseFloat(nonEssInput);
-    if (isNaN(parsed) || parsed < 0) return;
-    await updateNonEssential.mutateAsync({ week: currentWeekId, amount: parsed });
+    const parsed = Number.parseFloat(nonEssInput);
+    if (Number.isNaN(parsed) || parsed < 0) return;
+    await updateNonEssential.mutateAsync({
+      week: currentWeekId,
+      amount: parsed,
+    });
     setNonEssInput("");
     toast.success("Non-essential spending updated");
   }
 
   async function handleMonthGrocSave() {
-    const parsed = parseFloat(monthGrocInput);
-    if (isNaN(parsed) || parsed < 0) return;
-    await updateMonthGrocery.mutateAsync({ week: currentMonthKey, amount: parsed });
+    const parsed = Number.parseFloat(monthGrocInput);
+    if (Number.isNaN(parsed) || parsed < 0) return;
+    await updateMonthGrocery.mutateAsync({
+      week: currentMonthKey,
+      amount: parsed,
+    });
     setMonthGrocInput("");
     toast.success("Monthly grocery spending updated");
   }
@@ -150,17 +165,30 @@ export function RulesTab() {
             <>
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">Spent this month</p>
-                  <p className="text-2xl font-bold font-display">${fmt(monthGrocVal)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Spent this month
+                  </p>
+                  <p className="text-2xl font-bold font-display">
+                    ${fmt(monthGrocVal)}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Monthly budget</p>
-                  <p className="text-sm font-bold font-display text-success">${fmt(monthGrocBudget)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Monthly budget
+                  </p>
+                  <p className="text-sm font-bold font-display text-success">
+                    ${fmt(monthGrocBudget)}
+                  </p>
                 </div>
               </div>
               <Progress
                 value={monthGrocPct}
-                className={cn("h-2.5", monthGrocPct > 100 ? "[&>div]:bg-danger" : "[&>div]:bg-success")}
+                className={cn(
+                  "h-2.5",
+                  monthGrocPct > 100
+                    ? "[&>div]:bg-danger"
+                    : "[&>div]:bg-success",
+                )}
               />
               <p
                 className={cn(
@@ -217,8 +245,8 @@ export function RulesTab() {
                 nonEssStatus === "green"
                   ? "bg-success/10"
                   : nonEssStatus === "yellow"
-                  ? "bg-warning-bg"
-                  : "bg-danger-bg",
+                    ? "bg-warning-bg"
+                    : "bg-danger-bg",
               )}
             >
               <ShoppingBag
@@ -227,8 +255,8 @@ export function RulesTab() {
                   nonEssStatus === "green"
                     ? "text-success"
                     : nonEssStatus === "yellow"
-                    ? "text-warning"
-                    : "text-danger",
+                      ? "text-warning"
+                      : "text-danger",
                 )}
               />
             </div>
@@ -242,12 +270,18 @@ export function RulesTab() {
             <>
               <div className="flex items-end justify-between gap-2">
                 <div>
-                  <p className="text-xs text-muted-foreground">Spent this week</p>
-                  <p className="text-2xl font-bold font-display">${fmt(nonEssVal)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Spent this week
+                  </p>
+                  <p className="text-2xl font-bold font-display">
+                    ${fmt(nonEssVal)}
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Weekly cap</p>
-                  <p className="text-sm font-bold font-display text-warning">${fmt(nonEssLimit)}</p>
+                  <p className="text-sm font-bold font-display text-warning">
+                    ${fmt(nonEssLimit)}
+                  </p>
                 </div>
               </div>
               <Progress
@@ -257,8 +291,8 @@ export function RulesTab() {
                   nonEssStatus === "red"
                     ? "[&>div]:bg-danger"
                     : nonEssStatus === "yellow"
-                    ? "[&>div]:bg-warning"
-                    : "[&>div]:bg-success",
+                      ? "[&>div]:bg-warning"
+                      : "[&>div]:bg-success",
                 )}
               />
               <p
@@ -267,8 +301,8 @@ export function RulesTab() {
                   nonEssStatus === "red"
                     ? "text-danger"
                     : nonEssStatus === "yellow"
-                    ? "text-warning"
-                    : "text-success",
+                      ? "text-warning"
+                      : "text-success",
                 )}
               >
                 {nonEssVal > nonEssLimit

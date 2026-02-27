@@ -1,28 +1,34 @@
-import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import {
-  ChevronDown,
-  ChevronRight,
-  Loader2,
-  Check,
-  DollarSign,
-} from "lucide-react";
+  type ChecklistTask,
+  WEEKS,
+  type WeekId,
+  getCurrentWeekId,
+} from "@/data/householdData";
+import {
+  useAllChecklistStates,
+  useToggleChecklistItem,
+} from "@/hooks/useQueries";
 import { cn } from "@/lib/utils";
 import {
-  WEEKS,
-  getCurrentWeekId,
-  type WeekId,
-  type ChecklistTask,
-} from "@/data/householdData";
-import { useAllChecklistStates, useToggleChecklistItem } from "@/hooks/useQueries";
+  Check,
+  ChevronDown,
+  ChevronRight,
+  DollarSign,
+  Loader2,
+} from "lucide-react";
+import { useState } from "react";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 interface ChecklistItemRowProps {
@@ -32,7 +38,12 @@ interface ChecklistItemRowProps {
   onToggle: () => void;
 }
 
-function ChecklistItemRow({ task, checked, isToggling, onToggle }: ChecklistItemRowProps) {
+function ChecklistItemRow({
+  task,
+  checked,
+  isToggling,
+  onToggle,
+}: ChecklistItemRowProps) {
   return (
     <div
       className={cn(
@@ -75,7 +86,9 @@ function ChecklistItemRow({ task, checked, isToggling, onToggle }: ChecklistItem
           <span
             className={cn(
               "font-bold font-display text-sm",
-              checked ? "text-muted-foreground line-through" : "text-foreground",
+              checked
+                ? "text-muted-foreground line-through"
+                : "text-foreground",
             )}
           >
             ${fmt(task.amount)}
@@ -112,14 +125,21 @@ function WeekSection({
   const [open, setOpen] = useState(defaultOpen);
   const week = WEEKS.find((w) => w.id === weekId)!;
 
-  const doneTasks = week.tasks.filter((t) => statesMap.get(`${weekId}::${t.id}`) === true);
+  const doneTasks = week.tasks.filter(
+    (t) => statesMap.get(`${weekId}::${t.id}`) === true,
+  );
   const progressPct =
     week.tasks.length > 0
       ? Math.round((doneTasks.length / week.tasks.length) * 100)
       : 0;
 
   return (
-    <Card className={cn("card-shadow overflow-hidden", isCurrentWeek && "border-primary/40")}>
+    <Card
+      className={cn(
+        "card-shadow overflow-hidden",
+        isCurrentWeek && "border-primary/40",
+      )}
+    >
       {/* Header (always visible) */}
       <button
         type="button"
@@ -146,7 +166,9 @@ function WeekSection({
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{week.dateRange}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {week.dateRange}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">

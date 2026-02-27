@@ -1,16 +1,14 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -18,30 +16,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Wallet,
+  useAddAccount,
+  useAllAccounts,
+  useDeleteAccount,
+  useUpdateAccount,
+} from "@/hooks/useQueries";
+import { cn } from "@/lib/utils";
+import {
+  Check,
+  CircleHelp,
+  CreditCard,
+  Landmark,
+  Loader2,
+  Pencil,
+  PiggyBank,
   Plus,
   Trash2,
-  Pencil,
-  Loader2,
-  CreditCard,
-  PiggyBank,
-  Landmark,
-  CircleHelp,
-  Check,
+  Wallet,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  useAllAccounts,
-  useAddAccount,
-  useUpdateAccount,
-  useDeleteAccount,
-} from "@/hooks/useQueries";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 const ACCOUNT_TYPES = ["Checking", "Savings", "Credit Card", "Other"] as const;
@@ -93,7 +96,12 @@ function defaultAccountForm(): AccountFormState {
 interface AccountDialogProps {
   open: boolean;
   onClose: () => void;
-  editAccount?: { id: string; name: string; accountType: string; balance: number } | null;
+  editAccount?: {
+    id: string;
+    name: string;
+    accountType: string;
+    balance: number;
+  } | null;
 }
 
 function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
@@ -136,8 +144,8 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
       toast.error("Please enter an account name.");
       return;
     }
-    const balance = parseFloat(form.balance);
-    if (isNaN(balance)) {
+    const balance = Number.parseFloat(form.balance);
+    if (Number.isNaN(balance)) {
       toast.error("Please enter a valid balance.");
       return;
     }
@@ -162,7 +170,9 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
       onClose();
       setForm(defaultAccountForm());
     } catch {
-      toast.error(isEdit ? "Failed to update account." : "Failed to create account.");
+      toast.error(
+        isEdit ? "Failed to update account." : "Failed to create account.",
+      );
     }
   }
 
@@ -181,7 +191,10 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
         <div className="space-y-4 py-2">
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="account-name" className="font-semibold text-sm font-body">
+            <Label
+              htmlFor="account-name"
+              className="font-semibold text-sm font-body"
+            >
               Account Name <span className="text-danger">*</span>
             </Label>
             <Input
@@ -201,7 +214,9 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
             </Label>
             <Select
               value={form.accountType}
-              onValueChange={(val) => setForm((f) => ({ ...f, accountType: val as AccountType }))}
+              onValueChange={(val) =>
+                setForm((f) => ({ ...f, accountType: val as AccountType }))
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -218,7 +233,10 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
 
           {/* Balance */}
           <div className="space-y-1.5">
-            <Label htmlFor="account-balance" className="font-semibold text-sm font-body">
+            <Label
+              htmlFor="account-balance"
+              className="font-semibold text-sm font-body"
+            >
               {isEdit ? "Current Balance" : "Initial Balance"}
             </Label>
             <div className="relative">
@@ -232,7 +250,9 @@ function AccountDialog({ open, onClose, editAccount }: AccountDialogProps) {
                 step="0.01"
                 placeholder="0.00"
                 value={form.balance}
-                onChange={(e) => setForm((f) => ({ ...f, balance: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, balance: e.target.value }))
+                }
                 className="pl-7"
               />
             </div>
@@ -275,14 +295,20 @@ interface DeleteConfirmProps {
   isPending: boolean;
 }
 
-function DeleteConfirm({ accountName, onConfirm, onCancel, isPending }: DeleteConfirmProps) {
+function DeleteConfirm({
+  accountName,
+  onConfirm,
+  onCancel,
+  isPending,
+}: DeleteConfirmProps) {
   return (
     <div className="mt-2 p-3 rounded-xl bg-danger-bg border border-danger/20 space-y-2">
       <p className="text-sm font-body text-danger font-semibold">
         Delete &ldquo;{accountName}&rdquo;?
       </p>
       <p className="text-xs text-muted-foreground font-body">
-        This cannot be undone. Past transactions will keep their account reference.
+        This cannot be undone. Past transactions will keep their account
+        reference.
       </p>
       <div className="flex gap-2">
         <Button
@@ -337,7 +363,12 @@ export function AccountsTab() {
     setDialogOpen(true);
   }
 
-  function openEditDialog(account: { id: string; name: string; accountType: string; balance: number }) {
+  function openEditDialog(account: {
+    id: string;
+    name: string;
+    accountType: string;
+    balance: number;
+  }) {
     setEditingAccount(account);
     setDialogOpen(true);
   }
@@ -365,7 +396,9 @@ export function AccountsTab() {
       {/* Header */}
       <div className="px-1 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-xl font-bold font-display text-foreground">Accounts</h2>
+          <h2 className="text-xl font-bold font-display text-foreground">
+            Accounts
+          </h2>
           <p className="text-sm text-muted-foreground mt-0.5 font-body">
             Manage checking, savings, and credit card accounts
           </p>
@@ -395,7 +428,9 @@ export function AccountsTab() {
             {isLoading ? (
               <Skeleton className="h-8 w-16" />
             ) : (
-              <p className="text-2xl font-bold font-display text-primary">{allAccounts.length}</p>
+              <p className="text-2xl font-bold font-display text-primary">
+                {allAccounts.length}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -431,7 +466,8 @@ export function AccountsTab() {
             Your Accounts
             {allAccounts.length > 0 && (
               <span className="ml-auto text-xs font-normal text-muted-foreground">
-                {allAccounts.length} {allAccounts.length === 1 ? "account" : "accounts"}
+                {allAccounts.length}{" "}
+                {allAccounts.length === 1 ? "account" : "accounts"}
               </span>
             )}
           </CardTitle>
@@ -446,7 +482,9 @@ export function AccountsTab() {
           ) : allAccounts.length === 0 ? (
             <div className="text-center py-10 space-y-2">
               <Wallet className="h-10 w-10 text-muted-foreground/30 mx-auto" />
-              <p className="text-sm font-body text-muted-foreground">No accounts yet.</p>
+              <p className="text-sm font-body text-muted-foreground">
+                No accounts yet.
+              </p>
               <p className="text-xs text-muted-foreground/70 font-body">
                 Tap &ldquo;Add Account&rdquo; to create your first one.
               </p>
@@ -468,7 +506,9 @@ export function AccountsTab() {
                       <span
                         className={cn(
                           "text-base font-bold font-display",
-                          account.balance < 0 ? "text-danger" : "text-foreground",
+                          account.balance < 0
+                            ? "text-danger"
+                            : "text-foreground",
                         )}
                       >
                         ${fmt(account.balance)}
