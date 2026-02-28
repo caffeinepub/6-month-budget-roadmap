@@ -1,16 +1,18 @@
-import { Lightbulb } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { HOUSEHOLD, getCurrentWeekId, getWeekById } from "@/data/householdData";
 import {
+  useAllReceiptEntries,
   useFinancialSummary,
   useGrocerySpending,
-  useAllIncomeEntries,
-  useAllReceiptEntries,
 } from "@/hooks/useQueries";
-import { getCurrentWeekId, getWeekById, HOUSEHOLD } from "@/data/householdData";
+import { cn } from "@/lib/utils";
+import { Lightbulb } from "lucide-react";
 
 function fmt(n: number) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 interface Tip {
@@ -25,7 +27,6 @@ export function AiGuidancePanel() {
 
   const { data: summary } = useFinancialSummary();
   const { data: grocerySpent } = useGrocerySpending(currentWeekId);
-  const { data: incomeEntries } = useAllIncomeEntries();
   const { data: receiptEntries } = useAllReceiptEntries();
 
   const savingsAmount = summary?.savingsAmount ?? HOUSEHOLD.savingsStart;
@@ -70,7 +71,10 @@ export function AiGuidancePanel() {
   }
 
   // Rule 4: savings just at floor
-  if (savingsAmount >= HOUSEHOLD.savingsFloor && savingsAmount < HOUSEHOLD.savingsFloor + 500) {
+  if (
+    savingsAmount >= HOUSEHOLD.savingsFloor &&
+    savingsAmount < HOUSEHOLD.savingsFloor + 500
+  ) {
     tips.push({
       id: "savings-at-floor",
       text: "Savings are right at the floor. Stay steady — keep essentials only.",
